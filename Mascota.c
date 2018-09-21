@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <termios.h>
 #include <unistd.h>
 typedef struct{
   char nombre[32];
@@ -134,6 +133,7 @@ void menu()
 
 int main(){
   menu();
+  while(getchar()!='\n');
   getchar();
   return 0;
 }
