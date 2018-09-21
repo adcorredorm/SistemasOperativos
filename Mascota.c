@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <termios.h>
+#include <unistd.h>
 typedef struct{
   char nombre[32];
   char tipo[32];
@@ -9,10 +11,10 @@ typedef struct{
   int estatura;
   double peso;
   char sexo; // M/F
-} Mascota;
+} dogType;
 
 void imprimirMascota(void *p){
-  Mascota *pointer;
+  dogType *pointer;
   pointer = p;
 
   printf("Nombre: %s\nTipo: %s\nEdad: %i años\nRaza: %s\nEstatura: %i cm\nPeso: %f kg\nSexo: %c\n\n",
@@ -38,8 +40,8 @@ void generarEstructuras(int cantidad){
   FILE *file;
   int ok, i;
 
-  Mascota *randmascota, mascotas[cantidad];
-  randmascota = malloc(sizeof(Mascota));
+  dogType *randmascota, mascotas[cantidad];
+  randmascota = malloc(sizeof(dogType));
   if(randmascota == NULL){
     printf("malloc error");
     exit(-1);
@@ -63,13 +65,13 @@ void generarEstructuras(int cantidad){
   }
   free(randmascota);
 
-  file = fopen("BaseMascotas.dat", "w+");
+  file = fopen("dataDog.dat", "w+");
   if(file == NULL){
     printf("fopen error");
     exit(-1);
   }
 
-  ok = fwrite(randmascota, sizeof(Mascota), cantidad, file);
+  ok = fwrite(randmascota, sizeof(dogType), cantidad, file);
   if(ok == 0){
     //TODO: No funciona para 100.000+ datos (se puede escribir dentro del for, pero es muy lento)
     printf("fwrite error in %i", i);
@@ -84,7 +86,54 @@ void generarEstructuras(int cantidad){
 
 }
 
+void mostrar_menu()
+{
+	printf("Menu:\n");
+	printf("1. Ingresar Registro\n");
+	printf("2. Ver Registro\n");
+	printf("3. Borrar Registro\n");
+	printf("4. Buscar Registro\n");
+	printf("5. Salir\n");
+}
+
+void menu()
+{
+	int option;
+	mostrar_menu();
+	printf("Ingrese la opcion: ");
+	scanf(" %i", &option);
+	while(option != 5)
+	{
+		switch(option)
+		{
+			case 1:
+				printf("Aqui se Ingresa un Registro\n");
+				generarEstructuras(1.0e+2);
+				break;
+			case 2:
+				printf("Aqui se Ve un Registro\n");
+				break;
+			case 3:
+				printf("Aqui se Borra un Registro\n");
+				break;
+			case 4:
+				printf("Aqui se Busca un Registro\n");
+				break;
+			default:
+				break;
+		}
+		while(getchar()!='\n');
+		getchar();
+		mostrar_menu();
+		printf("Ingrese la opcion: ");
+		scanf(" %i", &option);
+	}
+	printf("Adios :v\n");
+
+}
+
 int main(){
-  generarEstructuras(1.0e+2);
+  menu();
+  getchar();
   return 0;
 }
