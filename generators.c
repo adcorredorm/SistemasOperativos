@@ -1,4 +1,5 @@
 #include<stdlib.h>
+#include <stdio.h>
 #include"lib/generators.h"
 
 char *generarRandomString(int size){
@@ -20,3 +21,28 @@ double rand_num(double amp)
 {
 	return drand48()*amp;
 }
+/*
+void names_generator(int cant)
+{
+	FILE * file;
+	file = (FILE *)fopen("names.txt","w+");
+	int ok;
+	char *name;
+	if (file == NULL) {
+		perror("names_generator error");
+		exit(-1);
+	}
+	while(cant--)
+	{
+		name = generarRandomString(31);
+		name = *name +"\n";
+		ok = fwrite(name,sizeof(char),1,file);
+		if (!ok) {
+			perror("names_generator -> fwrite error");
+			exit(-1);
+		}
+	}
+	fclose(file);
+	free(name);
+}
+*/

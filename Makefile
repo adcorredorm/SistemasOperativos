@@ -1,7 +1,7 @@
 # -*- Makefile -*-
 
 p1-dogProgram: p1-dogProgram.o generators.o structures.o
-	gcc p1-dogProgram.o generators.o structures.o -o p1-dogProgram
+	gcc p1-dogProgram.o generators.o structures.o -o p1-dogProgram.sh
 
 p1-dogProgram.o: p1-dogProgram.c lib/generators.h lib/structures.h
 	gcc -c p1-dogProgram.c -o p1-dogProgram.o

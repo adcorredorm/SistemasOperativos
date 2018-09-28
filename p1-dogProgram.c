@@ -5,17 +5,8 @@
 #include "lib/structures.h"
 #include "lib/generators.h"
 
-void imprimirMascota(void *p){
-    dogType *pointer;
-    pointer = p;
 
-    printf("Nombre: %s\nTipo: %s\nEdad: %i años\nRaza: %s\nEstatura: %i cm\nPeso: %f kg\nSexo: %c\n\n",
-        pointer->nombre, pointer->tipo, pointer->edad, pointer->raza, pointer->estatura, pointer->peso, pointer->sexo);
-}
-
-
-
-void generarEstructuras(int cantidad){
+/*void generarEstructuras(int cantidad){
     FILE *file;
     int ok, i;
 
@@ -62,7 +53,7 @@ void generarEstructuras(int cantidad){
         exit(-1);
     }
 
-}
+}*/
 
 void mostrar_menu()
 {
@@ -74,8 +65,50 @@ void mostrar_menu()
 	printf("5. Salir\n");
 }
 
+void ingresar_mascota(hash_table_node *tabla){
+  dogType *new_record, *perro;
+	new_record = (dogType*) malloc(sizeof(dogType));
+	if(new_record == NULL){
+    printf("No se pudo crear el registro\n");
+    return ;
+	}
+  printf("Ingrese Nombre\n");
+  scanf(" %s", new_record->nombre);
+  printf("Ingrese Tipo\n");
+  scanf(" %s", new_record->tipo);
+  printf("Ingrese Edad\n");
+  scanf(" %i", &new_record->edad);
+  printf("Ingrese Raza\n");
+  scanf(" %s", new_record->raza);
+  printf("Ingrese Estatura\n");
+  scanf(" %i", &new_record->estatura);
+  printf("Ingrese Peso\n");
+  scanf(" %f", &new_record->peso);
+  printf("Ingrese Sexo\n");
+  scanf(" %c", &new_record->sexo);
+  printf("Ingrese Record\n");
+  scanf(" %i", &new_record->record_number);
+
+  short ok = add_data_item(tabla, new_record);
+
+  if(ok == 0){
+    printf("No se pudo guardar el registro\n");
+    return ;
+  }else{
+    printf("Registro creado con exito\n");
+    perro = search_data_item(tabla, new_record->nombre, new_record->record_number);
+    imprimirMascota(new_record);
+    //imprimirMascota(perro);
+  }
+	//return new_record;
+  free(perro);
+}
+
 void menu()
 {
+  hash_table_node *tabla; //Esto hay que leerlo en el archivo
+  tabla = new_HT();
+
 	int option;
 	mostrar_menu();
 	printf("Ingrese la opcion: ");
@@ -86,7 +119,7 @@ void menu()
 		{
 			case 1:
           printf("Aqui se Ingresa un Registro\n");
-          generarEstructuras(1.0e+2);
+          ingresar_mascota(tabla);
           break;
           case 2:
           printf("Aqui se Ve un Registro\n");
@@ -111,6 +144,7 @@ void menu()
 }
 
 int main(){
+  //names_generator(1000);
   menu();
   while(getchar()!='\n');
   getchar();

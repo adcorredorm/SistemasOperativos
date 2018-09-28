@@ -4,7 +4,15 @@
 
 int NUM_RECORDS = 0;
 
-dogType *make_dogType(char *nombre,char *tipo, int edad, char *raza, int estatura, float peso, char sexo, int record_number)
+void imprimirMascota(void *p){
+    dogType *pointer;
+    pointer = p;
+
+    printf("Nombre: %s\nTipo: %s\nEdad: %i años\nRaza: %s\nEstatura: %i cm\nPeso: %f kg\nSexo: %c\n\n",
+        pointer->nombre, pointer->tipo, pointer->edad, pointer->raza, pointer->estatura, pointer->peso, pointer->sexo);
+}
+
+/*dogType *make_dogType(char *nombre,char *tipo, int edad, char *raza, int estatura, float peso, char sexo, int record_number)
 {
 	dogType *new_record;
 	new_record = (dogType*) malloc(sizeof(dogType));
@@ -20,7 +28,7 @@ dogType *make_dogType(char *nombre,char *tipo, int edad, char *raza, int estatur
 		new_record->record_number = record_number;
 	}
 	return new_record;
-}
+}*/
 
 hash_table_node *new_HT()
 {
@@ -38,13 +46,13 @@ hash_table_node *new_HT()
 	return new_ht;
 }
 
-short add_data_item(hash_table_node *hash, char *key, dogType *record)
+short add_data_item(hash_table_node *hash, dogType *record)
 {
-	if(key == NULL || hash == NULL || record == NULL)
+	if(hash == NULL || record == NULL)
 	{
 		return 0;//retorne Falso
 	}
-	int index = (int) (hash_code((unsigned char*)key)%HASH_TABLE_SIZE);//calculo del la posición de la entrada en la hash table
+	int index = (int) (hash_code((unsigned char*)record->nombre)%HASH_TABLE_SIZE);//calculo del la posición de la entrada en la hash table
 	hash_table_node *entrada = &hash[index];
 
 	//Si la lista de estructuras de la entrada está llena, expandirla al doble del máximo tamaño
@@ -65,13 +73,13 @@ short add_data_item(hash_table_node *hash, char *key, dogType *record)
 	//Se asignan los datos y la clave
 	data_item *new_data = &entrada->structures_list[entrada->size];
 	new_data -> data = record;
-	new_data -> key = key;
+	new_data -> key = record->nombre;
 
 	return 1;
 }
 
 // algoritmo djb2 hecho por dan bernstein, funcion original llamada "hash"
-unsigned long hash_code(unsigned char *str) 
+unsigned long hash_code(unsigned char *str)
 {
     unsigned long hash = 5381;
     int c;
@@ -82,3 +90,20 @@ unsigned long hash_code(unsigned char *str)
     return hash;
 }
 
+dogType* search_data_item(hash_table_node *hash, char* key,int num_rec)
+{
+	if(hash == NULL || key == NULL)
+	{
+		return NULL;//retorne Falso
+	}
+	int index = (int) (hash_code((unsigned char*)key)%HASH_TABLE_SIZE);//calculo del la posición de la entrada en la hash table
+	hash_table_node *entrada = &hash[index];
+	imprimirMascota(&(entrada->structures_list->data));
+
+	for (int i = 0; i < entrada->size; i++) {
+		if((entrada->structures_list+i)->data->record_number == num_rec)
+		{
+			return (entrada->structures_list+i)->data;
+		}
+	}
+}

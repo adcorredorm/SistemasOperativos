@@ -6,10 +6,10 @@ int NUM_RECORDS; //Cantidad de Registros presentes en la tabla hash
 
 typedef struct
 {
-	char *nombre;
-	char *tipo;
+	char nombre[32];
+	char tipo[32];
 	int edad;
-	char *raza;
+	char raza[16];
 	int estatura;
 	float peso;
 	char sexo;
@@ -33,10 +33,11 @@ typedef struct
 
 unsigned long hash_code(unsigned char *key);
 
-dogType *make_dogType(char *nombre,char *tipo, int edad, char *raza, int estatura, float peso, char sexo, int record_number);
+//dogType *make_dogType(char *nombre,char *tipo, int edad, char *raza, int estatura, float peso, char sexo, int record_number);
 hash_table_node *new_HT();
-short add_data_item(hash_table_node *hash,char *key, dogType *record);
+short add_data_item(hash_table_node *hash, dogType *record);
 data_item *search_record(char *key);
 short del_record(char *key);
+dogType* search_data_item(hash_table_node *hash, char* key,int num_rec);
 
 #endif
