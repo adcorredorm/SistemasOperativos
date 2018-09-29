@@ -1,7 +1,8 @@
 #ifndef GENERATORSH
 #define GENERATORSH
+#define NAMES_PATH "mombresMascotas.txt"
 
 char *generarRandomString(int size);
-double rand_num(double amp);
+short name_generator(char *ptr);
 
 #endif

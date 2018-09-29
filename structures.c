@@ -1,26 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "lib/structures.h"
 
-int NUM_RECORDS = 0;
-
-dogType *make_dogType(char *nombre,char *tipo, int edad, char *raza, int estatura, float peso, char sexo, int record_number)
-{
-	dogType *new_record;
-	new_record = (dogType*) malloc(sizeof(dogType));
-	if(new_record != NULL)
-	{
-		new_record->nombre = nombre;
-		new_record->tipo = tipo;
-		new_record->edad = edad;
-		new_record->raza = raza;
-		new_record->estatura = estatura;
-		new_record->peso = peso;
-		new_record->sexo = sexo;
-		new_record->record_number = record_number;
-	}
-	return new_record;
-}
 
 hash_table_node *new_HT()
 {
@@ -38,14 +20,20 @@ hash_table_node *new_HT()
 	return new_ht;
 }
 
-short add_data_item(hash_table_node *hash, char *key, dogType *record)
+short add_data(hash_table_node *t_hash, dogType *record)
 {
-	if(key == NULL || hash == NULL || record == NULL)
+
+	if(t_hash == NULL || record == NULL)
 	{
-		return 0;//retorne Falso
+		return 0;//retorne False
 	}
-	int index = (int) (hash_code((unsigned char*)key)%HASH_TABLE_SIZE);//calculo del la posición de la entrada en la hash table
-	hash_table_node *entrada = &hash[index];
+
+	int index;
+	hash_table_node *entrada;
+	data_item *new_data;
+
+	index = (int) (hash_code((unsigned char*)record->nombre)%HASH_TABLE_SIZE);//calculo del la posición de la entrada en la hash table
+	entrada = &t_hash[index];
 
 	//Si la lista de estructuras de la entrada está llena, expandirla al doble del máximo tamaño
 	if(entrada->size == entrada->max_size)
@@ -59,20 +47,28 @@ short add_data_item(hash_table_node *hash, char *key, dogType *record)
 		}
 	}
 	//Aumenta el tamaño de la lista de la entrada y el número de datos totales en la tabla una unidad
-	entrada->size += 1;
-	NUM_RECORDS++;
+
 
 	//Se asignan los datos y la clave
-	data_item *new_data = &entrada->structures_list[entrada->size];
+	new_data = &entrada->structures_list[entrada->size];
 	new_data -> data = record;
-	new_data -> key = key;
 
-	return 1;
+	int l = strlen(record->nombre);
+	for(int i = 0; i< l;i++) new_data->key[i]=record->nombre[i];
+	entrada->size++;
+	NUM_RECORDS++;
+	return 1;//Retorne True, todo salio bien.
 }
 
 // algoritmo djb2 hecho por dan bernstein, funcion original llamada "hash"
-unsigned long hash_code(unsigned char *str) 
+unsigned long hash_code(unsigned char *str)
 {
+	for(int i = 0;i<5;++i)
+    {
+        if (str[i]>='A' && str[i]<='Z') {
+            str[i]+= 32;
+        }
+    }
     unsigned long hash = 5381;
     int c;
 
@@ -82,3 +78,39 @@ unsigned long hash_code(unsigned char *str)
     return hash;
 }
 
+dogType *get_data(hash_table_node *t_hash, char key[], int num_reg)
+{
+	if(t_hash == NULL || key == NULL || num_reg == 0) return NULL;
+
+	int index;
+	hash_table_node *entrada;
+	dogType *record;
+
+ 	index = (int) (hash_code((unsigned char*) key)%HASH_TABLE_SIZE);//claculo del hash
+	entrada = &t_hash[index];// apuntamos a la entrada donde está la lista que contiene al dogType
+
+	//hacemos una busqueda lineal
+	for (int i = 0; i < entrada->size; ++i)
+	{
+		record = entrada->structures_list[i].data;
+		if(strcmp(record->nombre,key) == 0 && record->record_number == num_reg)
+		{
+			return record;
+		}
+	}
+	return NULL;
+}
+
+dogType del_data(char *key)
+{
+
+}
+
+void imprimirMascota(void *p)
+{
+    dogType *pointer;
+    pointer = p;
+
+    printf("Nombre: %s\nTipo: %s\nEdad: %i años\nRaza: %s\nEstatura: %i cm\nPeso: %f kg\nSexo: %c\n\n",
+        pointer->nombre, pointer->tipo, pointer->edad, pointer->raza, pointer->estatura, pointer->peso, pointer->sexo);
+}

@@ -1,4 +1,5 @@
 #include<stdlib.h>
+#include<stdio.h>
 #include"lib/generators.h"
 
 char *generarRandomString(int size){
@@ -16,7 +17,23 @@ char *generarRandomString(int size){
 	return string;
 }
 
-double rand_num(double amp)
+short name_generator(char *ptr)
 {
-	return drand48()*amp;
+	FILE *f;
+	int num_line, l,ok;
+
+	num_line = (int) (drand48()*1669);
+	f= fopen(NAMES_PATH,"r");
+	if(f == NULL)
+	{
+		printf("Error en name_generator al abrir el archivo\n");
+		return 0;
+	}
+	l=0;
+
+	while (l++<num_line) {
+		fscanf(f," %s", ptr);
+	}
+	fclose(f);
+	return 1;
 }
