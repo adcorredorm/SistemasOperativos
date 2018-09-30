@@ -1,3 +1,4 @@
 #Git Ignore
 
 *.sh
+*.dat

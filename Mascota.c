@@ -3,6 +3,9 @@
 #include <time.h>
 #include <termios.h>
 #include <unistd.h>
+#include <ctype.h>
+#include <string.h>
+
 typedef struct{
   char nombre[32];
   char tipo[32];
@@ -21,73 +24,155 @@ void imprimirMascota(void *p){
       pointer->nombre, pointer->tipo, pointer->edad, pointer->raza, pointer->estatura, pointer->peso, pointer->sexo);
 }
 
-void generarRandomString(char string[], int size){
-
-  int j, aux = (int)(drand48()*size-3)+3;
-
-  for(j = 0; j < aux; j++){
-    string[j] = 'a' + (int)(drand48()*26);
-  }
-
-  while(j < size){
-    string[j] = '\0';
-    j++;
-  }
-
+int longitud(char *str){
+  //Retorna la longitud de una cadena char*
+	int j = 0;
+	while(str[j] != '\0') j++;
+	return j;
 }
 
-void generarEstructuras(int cantidad){
-  FILE *file;
-  int ok, i;
+void lower_case(char *str){
+  //Convierte una cadena a letras minusculas
+	for(int i = 0; i < longitud(str); i++){
+    str[i] = tolower(str[i]);
+  }
+}
 
-  dogType *randmascota, mascotas[cantidad];
-  randmascota = malloc(sizeof(dogType));
-  if(randmascota == NULL){
+unsigned long hash_value(char *str){
+  //Retorna el valor hash de una cadena
+	lower_case(str);
+	unsigned long hash = 0;
+	for(int j = 0 ; j < longitud(str); j++){
+		hash = hash*33 + str[j]%33 + j*33 - (long)str[j]*13;
+	}
+	return hash%1000000;
+}
+
+void reiniciar_hash(int hashlist[]){
+  //reinicia el registro de la tabla para incluir registros
+  for(int j = 0; j < 1000000; j++) hashlist[j] = 0;
+
+  FILE *file;
+	int i = 0, ok;
+  dogType *mascota;
+  mascota = malloc(sizeof(dogType));
+  if(mascota == NULL){
     printf("malloc error");
     exit(-1);
   }
-
-  srand48(time(NULL)); //Semilla
-
-  for(i = 0; i < cantidad; i++){
-    generarRandomString(randmascota->nombre, 32);
-    generarRandomString(randmascota->tipo, 32);
-    randmascota->edad = (int)(drand48()*15); //El 15 es porque YOLO xD
-    generarRandomString(randmascota->raza, 16);
-    randmascota->estatura = (int)(drand48()*180); //Lo mismo el 180
-    randmascota->peso = drand48()*80;
-    if(drand48() > 0.5) randmascota->sexo = 'M';
-    else randmascota->sexo = 'F';
-
-    mascotas[i] = *randmascota;
-
-    imprimirMascota(randmascota);
-  }
-  free(randmascota);
-
-  file = fopen("dataDog.dat", "w+");
+	file = fopen("dataDogs.dat", "rb");
   if(file == NULL){
-    printf("fopen error");
+    printf("Error al abrir dataDogs.dat");
     exit(-1);
   }
-
-  ok = fwrite(randmascota, sizeof(dogType), cantidad, file);
-  if(ok == 0){
-    //TODO: No funciona para 100.000+ datos (se puede escribir dentro del for, pero es muy lento)
-    printf("fwrite error in %i", i);
-    exit(-1);
-  }
-
-  ok = fclose(file);
-  if(ok == EOF){
-    printf("fclose error");
-    exit(-1);
-  }
-
+	while(fread(mascota, sizeof(dogType), 1, file) == 1){
+    //Almacena en la tabla la posicion del primer registro al que corresponde un valor de hash determinado
+	  if(hashlist[hash_value(mascota->nombre)] == 0) hashlist[hash_value(mascota->nombre)] = i;
+    i ++;
+	}
+	fclose(file);
 }
 
-void mostrar_menu()
-{
+void insertar_registro(dogType *mascota){
+
+  FILE *file, *temp;
+  file = fopen("dataDogs.dat", "rb+");
+  if(file == NULL){
+    printf("Error al abrir dataDogs.dat");
+    exit(-1);
+  }
+  temp = fopen("dataDogs.temp", "wb+");
+  if(file == NULL){
+    printf("Error al crear dataDogs.temp");
+    exit(-1);
+  }
+
+  int ok;
+  dogType *newPet;
+  newPet = malloc(sizeof(dogType));
+  if(mascota == NULL){
+    printf("Error al insertar el nuevo registro");
+    exit(-1);
+  }
+
+
+  while(fread(newPet, sizeof(dogType), 1, file) > 0){
+    if(hash_value(mascota->nombre) <= hash_value(newPet->nombre)){
+      //Se ordenan los registros segun su valor hash en forma FIFO
+      //Se copia en un archivo temporal la primera parte de los registros (antes del que va a ser insertado)
+      ok = fwrite(newPet, sizeof(dogType), 1, temp);
+      if(ok == 0){
+        printf("Error al escribir en dataDogs.temp");
+        remove("dataDogs.temp");
+        exit(-1);
+      }
+    }else{
+      ok = fwrite(mascota, sizeof(dogType), 1, temp);
+      if(ok == 0){
+        printf("Error al escribir en dataDogs.temp");
+        remove("dataDogs.temp");
+        exit(-1);
+      }
+      break;
+    }
+  }
+
+  //Se copian los datos restantes
+  while(fread(newPet, sizeof(dogType), 1, file) > 0){
+    ok = fwrite(newPet, sizeof(dogType), 1, temp);
+    if(ok == 0){
+      printf("Error al escribir en dataDogs.temp");
+      remove("dataDogs.temp");
+      exit(-1);
+    }
+  }
+
+	fclose(file);
+	fclose(temp);
+  free(newPet);
+
+  //Se elimina el archivo original
+	remove("dataDogs.dat");
+  //Se renombra el temporal
+  rename("dataDogs.temp","dataDogs.dat");
+}
+
+dogType* crear_registro(){
+  dogType *mascota;
+  mascota = malloc(sizeof(dogType));
+  if(mascota == NULL){
+    printf("Error al crear el registro");
+    exit(-1);
+  }
+
+  system("clear");
+  printf("Bienvenido el menú para registrar una nueva mascota.\nPorfavor ingrese los datos solicitados a continuación:\n\n");
+	printf("Ingrese el nombre de la mascota\n");
+	scanf(" %s", mascota->nombre);
+	printf("Ingrese el tipo de la mascota\n");
+	scanf(" %s", mascota->tipo);
+	printf("Ingrese la edad de la mascota\n");
+	scanf(" %d", &mascota->edad);
+	printf("Ingrese la raza de la mascota\n");
+	scanf(" %s", mascota->raza);
+	printf("Ingrese la estatura de la mascota\n");
+	scanf(" %d", &mascota->estatura);
+	printf("Ingrese el peso de la mascota\n");
+	scanf(" %f", &mascota->peso);
+  printf("Ingrese el género de la mascota\n");
+  scanf(" %c", &mascota->sexo);
+  while(mascota->sexo != 'M' && mascota->sexo != 'F'){
+    printf("El género de la mascota debe ser M para Masculino o F para Femenino\nIngrese nuevamente el género de la mascota");
+    scanf(" %c", &mascota->sexo);
+  }
+
+  return mascota;
+}
+
+
+
+void mostrar_menu(){
+  system("clear");
 	printf("Menu:\n");
 	printf("1. Ingresar Registro\n");
 	printf("2. Ver Registro\n");
@@ -96,44 +181,57 @@ void mostrar_menu()
 	printf("5. Salir\n");
 }
 
-void menu()
-{
-	int option;
-	mostrar_menu();
-	printf("Ingrese la opcion: ");
-	scanf(" %i", &option);
-	while(option != 5)
-	{
-		switch(option)
-		{
+int main(){
+
+  int opcion, hashlist[1000000];
+
+	reiniciar_hash(hashlist);
+
+  do{
+    mostrar_menu();
+
+    printf("Ingrese la opcion: \n");
+  	scanf(" %i", &opcion);
+    switch(opcion){
 			case 1:
-				printf("Aqui se Ingresa un Registro\n");
-				generarEstructuras(1.0e+2);
-				break;
+				//printf("Aqui se Ingresa un Registro\n");
+        dogType *nueva_mascota = crear_registro();
+        insertar_registro(nueva_mascota);
+        reiniciar_hash(hashlist);
+
+			break;
+
 			case 2:
 				printf("Aqui se Ve un Registro\n");
-				break;
+
+			break;
+
 			case 3:
 				printf("Aqui se Borra un Registro\n");
-				break;
+
+			break;
+
 			case 4:
 				printf("Aqui se Busca un Registro\n");
-				break;
+
+			break;
+
+      case 5:
+  			printf("Fin de la aplicacion\n");
+  		break;
+
 			default:
-				break;
-		}
-		while(getchar()!='\n');
-		getchar();
-		mostrar_menu();
-		printf("Ingrese la opcion: ");
-		scanf(" %i", &option);
-	}
-	printf("Adios :v\n");
+        printf("Opcion invalida\n");
 
-}
+			break;
+    }
+    if(opcion != 5){
+        printf("Presione enter para volver al menu\n");
+        while(getchar() != '\n');
+    }
+    getchar();
 
-int main(){
-  menu();
-  getchar();
+  }while(opcion != 5);
+
   return 0;
 }
