@@ -169,7 +169,89 @@ dogType* crear_registro(){
   return mascota;
 }
 
+void ver_registro(){
 
+	FILE *file;
+	int dato, numero_de_registros, eleccion;
+	file = fopen("dataDogs.dat","rb");
+  if(file == NULL){
+    printf("Error al abrir dataDogs.dat");
+    exit(-1);
+  }
+
+  //Envía el puntero al final del archivo
+  fseek(file,0,SEEK_END);
+  //Calcula la cantidad de elementos del archivo
+	numero_de_registros = ftell(file)/sizeof(dogType);
+	printf("El numero de registros es: %d\n", numero_de_registros);
+
+  printf("Ingrese el registro que desea buscar\n");
+	scanf(" %i", &dato);
+	while(dato > numero_de_registros || dato < 0){
+    //Verifica que si exista el registro
+		printf("Registro Incorrecto\n");
+		printf("por favor ingrese el registro que desea buscar\n");
+		scanf("%i", &dato);
+	}
+
+
+	dogType *newPet = malloc(sizeof(dogType));
+  //Acomoda el puntero justo al inicio de el registro deseado y lo guarda en una estructura
+	fseek(file, (dato - 1) * sizeof(dogType),SEEK_SET);
+  fread(newPet, sizeof(dogType), 1, file);
+	fclose(file);
+
+  //Se prepara el archivo temporal para modificar el registro
+  file = fopen("temp.txt","w+");
+  if(file == NULL){
+    printf("Error al abrir temp.txt");
+    exit(-1);
+  }
+  fprintf(file, "Nombre: %s\n", newPet->nombre);
+	fprintf(file, "Tipo:   %s\n", newPet->tipo);
+	fprintf(file, "Edad:   %i\n", newPet->edad);
+	fprintf(file, "Raza:   %s\n", newPet->raza);
+	fprintf(file, "Tamaño: %i\n", newPet->estatura);
+	fprintf(file, "Peso:   %f\n", newPet->peso);
+	fprintf(file, "Genero: %c\n", newPet->sexo);
+	fclose(file);
+	system("gedit temp.txt");
+
+  printf("¿Desea guardar los cambios realizados en el archivo?\n");
+	printf("1 si, 0 no\n");
+	scanf(" %i", &eleccion);
+	if(eleccion == 1){
+    //string para almacenar basura
+    char trh[32];
+
+    //Se recupera la informacion del archivo temporal
+		file = fopen("temp.txt","r");
+    if(file == NULL){
+      printf("Error al abrir temp.txt");
+      exit(-1);
+    }
+		fscanf(file, "%s %s", trh, newPet->nombre);
+		fscanf(file, "%s %s", trh, newPet->tipo);
+		fscanf(file, "%s %i", trh, &newPet->edad);
+		fscanf(file, "%s %s", trh, newPet->raza);
+		fscanf(file, "%s %i", trh, &newPet->estatura);
+		fscanf(file, "%s %f", trh, &newPet->peso);
+		fscanf(file, "%s %c", trh, &newPet->sexo);
+		fclose(file);
+
+    //Se reinserta la informacion recuperada en el registro de datos
+    file = fopen("dataDogs.dat", "rb+");
+    if(file == NULL){
+      printf("Error al abrir temp.txt");
+      exit(-1);
+    }
+    fseek(file, (dato - 1) * sizeof(dogType),SEEK_SET);
+    fwrite(newPet, sizeof(dogType), 1, file);
+    fclose(file);
+	}
+  free(newPet);
+	remove("temp.txt");
+}
 
 void mostrar_menu(){
   system("clear");
@@ -179,6 +261,18 @@ void mostrar_menu(){
 	printf("3. Borrar Registro\n");
 	printf("4. Buscar Registro\n");
 	printf("5. Salir\n");
+}
+
+void imprimir_datos(){
+  //Funcion solo de test
+  FILE *file;
+  dogType *pet = malloc(sizeof(dogType));
+  file = fopen("dataDogs.dat", "rb");
+  while(fread(pet, sizeof(dogType), 1, file) > 0){
+    imprimirMascota(pet);
+  }
+  free(pet);
+  fclose(file);
 }
 
 int main(){
@@ -194,15 +288,15 @@ int main(){
   	scanf(" %i", &opcion);
     switch(opcion){
 			case 1:
-				//printf("Aqui se Ingresa un Registro\n");
-        dogType *nueva_mascota = crear_registro();
-        insertar_registro(nueva_mascota);
+
+        insertar_registro(crear_registro());
         reiniciar_hash(hashlist);
 
 			break;
 
 			case 2:
-				printf("Aqui se Ve un Registro\n");
+				//printf("Aqui se Ve un Registro\n");
+        ver_registro();
 
 			break;
 
@@ -213,7 +307,7 @@ int main(){
 
 			case 4:
 				printf("Aqui se Busca un Registro\n");
-
+        imprimir_datos();
 			break;
 
       case 5:
