@@ -1,6 +1,10 @@
 #ifndef GENERATORSH
 #define GENERATORSH
+
+#include "structures.h"
+
 #define NAMES_PATH "nombresMascotas.txt"
+#define REG_PATH "registered.dat"
 
 char *generarRandomString(int size);
 short name_generator(void *ptr);

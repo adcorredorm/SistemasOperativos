@@ -1,6 +1,9 @@
 #include<stdlib.h>
 #include<stdio.h>
+#include<time.h>
+#include<string.h>
 #include"lib/generators.h"
+
 
 char *generarRandomString(int size){
 	char *string = (char*) malloc(sizeof(char)*size);
@@ -41,11 +44,18 @@ short name_generator(void *ptr)
 void generarEstructuras(hash_table_node *t_hash, long cantidad)
 {
     long i;
-    int l;
+    int ok;
 
     dogType *randmascota;
     srand48(time(NULL)); //Semilla
+	FILE *f;
 
+	f = fopen(DATA_PATH,"r");
+	if(f != NULL){return;}//Si ya hay un archivo dataDog.dat no genera más registros
+	//fclose(f);
+	//printf("HOLA\n");
+	f = fopen(REG_PATH,"w+");
+	if(f == NULL){perror("Error al abrir el archivo registered.dat\n");exit(-1);}
     //Genera 'cantidad' estructuras
     for(i = 0; i < cantidad; i++)
     {
@@ -66,14 +76,18 @@ void generarEstructuras(hash_table_node *t_hash, long cantidad)
         randmascota->sexo = (drand48()>0.5)?'M':'F';
 
 
-        if(add_data(t_hash,randmascota))//añade el registro a la tabla hash
+        if(!add_data(t_hash,randmascota))//añade el registro a la tabla hash
         {
-            //printf("Registro Guardado\n");
-        }else{
-            printf("Ocurrio Un Problema al Guardar el Registro\n");
+            printf("Ocurrio Un Problema al Guardar el Registro en generarEstructuras\n");
+			fclose(f);
+			exit(-1);
         }
-
+		ok = fprintf(f, "%s\n", randmascota->nombre);
+		if(ok<0){printf("Ocurrio Un Problema al Escribir en registered.dat\n");exit(-1);}
+		ok = fprintf(f, "%li\n\n", 1L*randmascota->num_reg);
+		if(ok<0){printf("Ocurrio Un Problema al Escribir en registered.dat\n");exit(-1);}
+		free(randmascota);
         //imprimirMascota(randmascota);
     }
-    free(randmascota);
+	fclose(f);
 }

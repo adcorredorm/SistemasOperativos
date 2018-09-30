@@ -1,50 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
+#include <sys/types.h>
 #include "lib/structures.h"
 #include "lib/generators.h"
-
-void generarEstructuras(hash_table_node *t_hash, long cantidad)
-{
-    long i;
-    int l;
-
-    dogType *randmascota;
-    srand48(time(NULL)); //Semilla
-
-    //Genera 'cantidad' estructuras
-    for(i = 0; i < cantidad; i++)
-    {
-        randmascota = (dogType*) calloc(1,sizeof(dogType));
-
-        if(randmascota == NULL){
-          printf("malloc error en generarEstructuras");
-          exit(-1);
-        }
-
-        //asigna valores aleatorios
-        name_generator(randmascota->nombre);
-		strcpy(randmascota->tipo,generarRandomString(32));
-        randmascota->edad = (int)(drand48()*15);
-        strcpy(randmascota->raza,generarRandomString(16));
-        randmascota->estatura = (int)(drand48()*160);
-        randmascota->peso = (float)(drand48()*20+40);
-        randmascota->sexo = (drand48()>0.5)?'M':'F';
-
-
-        if(add_data(t_hash,randmascota))//añade el registro a la tabla hash
-        {
-            printf("Registro Guardado\n");
-        }else{
-            printf("Ocurrio Un Problema al Guardar el Registro\n");
-        }
-
-        //imprimirMascota(randmascota);
-    }
-    free(randmascota);
-}
 
 void mostrar_menu()
 {
@@ -109,24 +69,23 @@ void buscar_registro(hash_table_node* t_hash)
 	int num_reg;
 	get_info("Nombre de la mascota: "," %s", name);
 
-	get_info("\nNúmero del Registro: "," %i",&num_reg);
+	get_info("Número del Registro: "," %i",&num_reg);
 
 	imprimirMascota(get_data(t_hash,name,num_reg));
 }
 
 void menu()
 {
+	hash_table_node *t_hash;
 	int option;
-    hash_table_node *t_hash;
-	printf("%p\n", t_hash);
     t_hash = open_hash_table();
-	printf("%p\n", t_hash);
     if(t_hash == NULL)
     {
         perror("No se pudo crear la tabla hash en menu");
         exit(-1);
     }
-	generarEstructuras(t_hash,10e+7);
+	printf("Generando los registros...\n");
+	generarEstructuras(t_hash,10e+2);
     mostrar_menu();
     get_info("Ingrese la opcion: ", " %i", &option);
 
@@ -164,7 +123,8 @@ void menu()
 
 int main()
 {
-  menu();
-  _pause();
+	menu();
+    _pause();
+
   return 0;
 }

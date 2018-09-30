@@ -36,19 +36,16 @@ hash_table_node *open_hash_table()
 
 		ok = fread(&t_hash[i].size,sizeof(int),1,f);
 		if(ok != 1) {printf("no se pudo leer el tamaño de la entrada en open_hash_table\n");exit(-1);}
-		//printf("ok :%i ",ok );
+		//printf("entrada %i size :%i ",i,t_hash[i].size );
 		ok = fread(&t_hash[i].max_size,sizeof(int),1,f);
 		if(ok != 1) {printf("no se pudo leer el tamaño máximo de la entrada en open_hash_table\n");exit(-1);}
-		//printf("%i\n", ok);
+		//printf("max_size %i ", t_hash[i].max_size);
 
 
 		t_hash[i].structures_list = (data_item*) calloc(t_hash[i].max_size,sizeof(data_item));
 		ok = fread(t_hash[i].structures_list, sizeof(data_item),t_hash[i].size,f);
 		if(ok != t_hash[i].size) {printf("no se pudo leer la lista de la entrada en open_hash_table\n");exit(-1);}
-		//printf("entrada %i tamaño %i\n",i,t_hash[i].size);
-		for (int j = 0; j < t_hash[i].size; j++) {
-			printf("entrada %i key %s data_pos %li\n",i,t_hash[i].structures_list[j].key,t_hash[i].structures_list[j].data_pos);
-		}
+		//printf("read %i\n",ok);
 	}
 
 	fclose(f);
@@ -116,6 +113,7 @@ short add_data(hash_table_node *t_hash, dogType *record)
 	//Si la lista de estructuras de la entrada está llena, expandirla al doble del máximo tamaño
 	if(entrada->size == entrada->max_size)
 	{
+		printf("Ampliada la entrada %i a %i\n", index,entrada->size*2);
 		entrada->max_size *= 2;
 		entrada->structures_list = (data_item*) realloc(entrada->structures_list,sizeof(data_item)*entrada->max_size);
 		if (entrada->structures_list == NULL)
@@ -152,6 +150,7 @@ short add_data(hash_table_node *t_hash, dogType *record)
 	}else{
 		ok = fseek(f,data_ptr->data_pos-1,SEEK_SET);
 		if(ok == -1){printf("error en add_data->fseek\n");exit(-1);}
+		record->num_reg = data_ptr->data_pos/sizeof(dogType)+1;
 		ok = fwrite(record, sizeof(dogType),1,f);
 		if(ok == 0){printf("error en add_data->fwrite\n");exit(-1);}
 	}
@@ -159,7 +158,7 @@ short add_data(hash_table_node *t_hash, dogType *record)
 	for(int i = 0; i< l;i++) data_ptr->key[i]=record->nombre[i];
 	fclose(f);
 	NUM_RECORDS++;
-	printf("%i\n", NUM_RECORDS);
+	//printf("%i\n", NUM_RECORDS);
 	return 1;//Retorne True, todo salio bien.
 }
 
@@ -240,7 +239,7 @@ dogType *del_data(hash_table_node *t_hash,char *key,int num_reg)
 	fclose(f);
 	l = strlen(data_ptr->key);
 	for(int i=0;i < l; ++i) data_ptr->key[i] = '\0';
-
+	NUM_RECORDS--;
 	return record;
 }
 
@@ -249,6 +248,6 @@ void imprimirMascota(void *p)
     dogType *pointer;
     pointer = p;
 
-    printf("Nombre: %s\nTipo: %s\nEdad: %i años\nRaza: %s\nEstatura: %i cm\nPeso: %f kg\nSexo: %c\n Número de Registro: %li\n",
-        pointer->nombre, pointer->tipo, pointer->edad, pointer->raza, pointer->estatura, pointer->peso, pointer->sexo,pointer->num_reg+1);
+    printf("Nombre: %s\nTipo: %s\nEdad: %i años\nRaza: %s\nEstatura: %i cm\nPeso: %1.2f kg\nSexo: %c\nNúmero de Registro: %li\n",
+        pointer->nombre, pointer->tipo, pointer->edad, pointer->raza, pointer->estatura, pointer->peso, pointer->sexo,pointer->num_reg);
 }
