@@ -104,7 +104,7 @@ int main(){
   size = 16;
   extraerDatos("razas.txt", razas);
 
-  generarEstructuras(1.0e+1, nombres, razas, tipos);
+  generarEstructuras(1.0e+7, nombres, razas, tipos);
 
   return 0;
 }

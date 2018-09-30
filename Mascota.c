@@ -53,7 +53,7 @@ void reiniciar_hash(int hashlist[]){
   for(int j = 0; j < 1000000; j++) hashlist[j] = 0;
 
   FILE *file;
-	int i = 0, ok;
+	int i = 1, ok;
   dogType *mascota;
   mascota = malloc(sizeof(dogType));
   if(mascota == NULL){
@@ -65,12 +65,14 @@ void reiniciar_hash(int hashlist[]){
     printf("Error al abrir dataDogs.dat");
     exit(-1);
   }
-	while(fread(mascota, sizeof(dogType), 1, file) == 1){
+	while(fread(mascota, sizeof(dogType), 1, file) != 0){
     //Almacena en la tabla la posicion del primer registro al que corresponde un valor de hash determinado
 	  if(hashlist[hash_value(mascota->nombre)] == 0) hashlist[hash_value(mascota->nombre)] = i;
     i ++;
 	}
 	fclose(file);
+
+  //for(int i = 0; i < 1000000; i++) if(hashlist[i] != 0) printf("%i ", hashlist[i]);
 }
 
 void insertar_registro(dogType *mascota){
@@ -95,26 +97,31 @@ void insertar_registro(dogType *mascota){
     exit(-1);
   }
 
+  int flag = 0;
 
   while(fread(newPet, sizeof(dogType), 1, file) > 0){
-    if(hash_value(mascota->nombre) <= hash_value(newPet->nombre)){
-      //Se ordenan los registros segun su valor hash en forma FIFO
-      //Se copia en un archivo temporal la primera parte de los registros (antes del que va a ser insertado)
-      ok = fwrite(newPet, sizeof(dogType), 1, temp);
-      if(ok == 0){
-        printf("Error al escribir en dataDogs.temp");
-        remove("dataDogs.temp");
-        exit(-1);
-      }
-    }else{
+
+    if(strcmp(mascota->nombre, newPet->nombre) > 0){
+      //Inserta el nuevo registro al final de los que tengan el mismo nombre
       ok = fwrite(mascota, sizeof(dogType), 1, temp);
       if(ok == 0){
         printf("Error al escribir en dataDogs.temp");
         remove("dataDogs.temp");
         exit(-1);
       }
-      break;
+      flag = 1;
     }
+
+    //Se copia en un archivo temporal la primera parte de los registros (antes del que va a ser insertado)
+    ok = fwrite(newPet, sizeof(dogType), 1, temp);
+    if(ok == 0){
+      printf("Error al escribir en dataDogs.temp");
+      remove("dataDogs.temp");
+      exit(-1);
+    }
+
+    if(flag == 1) break;
+
   }
 
   //Se copian los datos restantes
@@ -171,6 +178,7 @@ dogType* crear_registro(){
 
 void ver_registro(){
 
+  system("clear");
 	FILE *file;
 	int dato, numero_de_registros, eleccion;
 	file = fopen("dataDogs.dat","rb");
@@ -253,6 +261,110 @@ void ver_registro(){
 	remove("temp.txt");
 }
 
+void eliminar_registro(){
+
+  system("clear");
+  FILE *file, *temp;
+	int dato, numero_de_registros, eleccion;
+	file = fopen("dataDogs.dat","rb");
+  if(file == NULL){
+    printf("Error al abrir dataDogs.dat");
+    exit(-1);
+  }
+
+  //Envía el puntero al final del archivo
+  fseek(file,0,SEEK_END);
+  //Calcula la cantidad de elementos del archivo
+	numero_de_registros = ftell(file)/sizeof(dogType);
+	printf("El numero de registros es: %d\n", numero_de_registros);
+
+  printf("Ingrese el registro que desea eliminar\n");
+	scanf(" %i", &dato);
+	while(dato > numero_de_registros || dato < 0){
+    //Verifica que si exista el registro
+		printf("Registro Incorrecto\n");
+		printf("Por favor ingrese el registro que desea eliminar\n");
+		scanf("%i", &dato);
+	}
+
+  //Regresa el puntero file al inicio del archivo
+  rewind(file);
+  temp = fopen("dataDogs.temp", "wb+");
+  if(file == NULL){
+    printf("Error al crear dataDogs.temp");
+    exit(-1);
+  }
+	int i = 1;
+  dogType *newPet = malloc(sizeof(dogType));
+  if(newPet == NULL){
+    printf("malloc error");
+    exit(-1);
+  }
+	while( fread(newPet, sizeof(dogType), 1, file) != 0 && dato != i){
+    //Se copia en un archivo temporal la primera parte de los registros (antes del que va a ser eliminado)
+		fwrite(newPet, sizeof(dogType), 1, temp);
+		i ++;
+	}
+
+  printf("La mascota que será eliminada es %s:\n", newPet->nombre);
+
+  //Se copian los datos restantes
+  while(fread(newPet, sizeof(dogType), 1, file) != 0)
+    fwrite(newPet, sizeof(dogType), 1, temp);
+
+  free(newPet);
+  fclose(file);
+	fclose(temp);
+
+  //Se elimina el archivo original
+	remove("dataDogs.dat");
+  //Se renombra el temporal
+  rename("dataDogs.temp", "dataDogs.dat");
+}
+
+void buscar_registro(int hashlist[]){
+	FILE *file;
+	int aux = 0, i;
+
+	char nombre[32];
+	printf("Ingrese el nombre que desea buscar\n");
+	scanf(" %s", nombre);
+
+  //Se compruba que exista almenos un registro con ese nombre
+	i = hashlist[hash_value(nombre)];
+	if(i == 0){
+		printf("No existe  el registro solicitado\n");
+		return;
+	}
+
+  file = fopen("dataDogs.dat","rb");
+	fseek(file, (i - 1) * sizeof(dogType), SEEK_SET);
+	dogType *pet = malloc(sizeof(dogType));
+  if(pet == NULL){
+      printf("malloc error");
+      exit(-1);
+  }
+	fread(pet, sizeof(dogType), 1, file);
+	printf("Los registros que coinciden con el nombre %s son:\n%i\n", nombre, i++);
+	/*while(aux == 0 && fread(pet, sizeof(dogType), 1, file) > 0){
+    //Busca los registros sucesivos que coincidan con el nombre //TODO: este se puede usar si los generados estan en orden
+		if(strcmp(nombre, pet->nombre) == 0){
+      printf("%i\n", ++i);
+    }
+		else aux = 1;
+	}*/
+  while(fread(pet, sizeof(dogType), 1, file) > 0){
+    //Busca los registros sucesivos que coincidan con el nombre
+    lower_case(pet->nombre);
+		if(strcmp(nombre, pet->nombre) == 0){
+      printf("%i\n", i);
+    }
+		i++;
+	}
+  free(pet);
+	fclose(file);
+}
+
 void mostrar_menu(){
   system("clear");
 	printf("Menu:\n");
@@ -295,23 +407,30 @@ int main(){
 			break;
 
 			case 2:
-				//printf("Aqui se Ve un Registro\n");
+
         ver_registro();
+        reiniciar_hash(hashlist);
 
 			break;
 
 			case 3:
-				printf("Aqui se Borra un Registro\n");
+
+        eliminar_registro();
+        reiniciar_hash(hashlist);
 
 			break;
 
 			case 4:
-				printf("Aqui se Busca un Registro\n");
-        imprimir_datos();
+
+        printf("Aqui se Busca un Registro\n");
+        buscar_registro(hashlist);
+
 			break;
 
       case 5:
+
   			printf("Fin de la aplicacion\n");
+        
   		break;
 
 			default:
