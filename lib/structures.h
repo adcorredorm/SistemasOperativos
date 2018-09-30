@@ -2,6 +2,9 @@
 #define STRUCTURESH_INCLUDED
 
 #define HASH_TABLE_SIZE 1009
+#define DATA_PATH "dataDog.dat"
+#define HASH_TABLE_PATH "hash_table.bin"
+
 int NUM_RECORDS; //Cantidad de Registros presentes en la tabla hash
 
 typedef struct
@@ -13,12 +16,12 @@ typedef struct
 	int estatura;
 	float peso;
 	char sexo;
-	int record_number;
+	long num_reg;
 }dogType;
 
 typedef struct
 {
-	dogType *data;
+	long data_pos;
 	char key[32];
 }data_item;
 
@@ -29,12 +32,13 @@ typedef struct
 	int max_size;
 }hash_table_node;
 
-unsigned long hash_code(unsigned char *key);//Implementado
+unsigned long hash_code(unsigned char *key);
 
-short add_data(hash_table_node *table, dogType *record);//Implementado
-dogType del_data(char *key,int num_reg);
+short add_data(hash_table_node *table, dogType *record);
+dogType *del_data(hash_table_node *t_hash, char *key,int num_reg);
 dogType *get_data(hash_table_node *t_hash, char *key, int num_reg);
-hash_table_node *new_HT();//Implementado
+hash_table_node *open_hash_table();
+void close_hash_table(hash_table_node* t_hash);
 void imprimirMascota(void *p);
 
 

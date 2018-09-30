@@ -6,14 +6,12 @@
 #include "lib/structures.h"
 #include "lib/generators.h"
 
-
-/*
-void generarEstructuras(hash_table_node t_hash, int cantidad)
+void generarEstructuras(hash_table_node *t_hash, long cantidad)
 {
-    FILE *file;
-    int ok, i;
+    long i;
+    int l;
 
-    dogType *randmascota, mascotas[cantidad];
+    dogType *randmascota;
     srand48(time(NULL)); //Semilla
 
     //Genera 'cantidad' estructuras
@@ -28,48 +26,25 @@ void generarEstructuras(hash_table_node t_hash, int cantidad)
 
         //asigna valores aleatorios
         name_generator(randmascota->nombre);
-        randmascota->tipo = generarRandomString(32);
+		strcpy(randmascota->tipo,generarRandomString(32));
         randmascota->edad = (int)(drand48()*15);
-        randmascota->raza = generarRandomString(16);
+        strcpy(randmascota->raza,generarRandomString(16));
         randmascota->estatura = (int)(drand48()*160);
         randmascota->peso = (float)(drand48()*20+40);
         randmascota->sexo = (drand48()>0.5)?'M':'F';
-        randmascota->record_number = NUM_RECORDS+1;
 
 
-        if(add_data(t_hash, new_pet->nombre, new_pet))//añade el registro a la tabla hash
+        if(add_data(t_hash,randmascota))//añade el registro a la tabla hash
         {
             printf("Registro Guardado\n");
         }else{
             printf("Ocurrio Un Problema al Guardar el Registro\n");
         }
 
-      //  imprimirMascota(randmascota);
+        //imprimirMascota(randmascota);
     }
     free(randmascota);
-
-    file = fopen("dataDog.dat", "w+");
-    if(file == NULL)
-    {
-        printf("fopen error");
-        exit(-1);
-    }
-    ok = fwrite(randmascota, sizeof(dogType), cantidad, file);
-    if(ok == 0)
-    {
-        //TODO: No funciona para 100.000+ datos (se puede escribir dentro del for, pero es muy lento)
-        printf("fwrite error in %i", i);
-        exit(-1);
-    }
-
-    ok = fclose(file);
-    if(ok == EOF)
-    {
-        printf("fclose error");
-        exit(-1);
-    }
 }
-*/
 
 void mostrar_menu()
 {
@@ -91,7 +66,6 @@ void get_info(const char *prompt, const char *format, void *ptr)
 {
     printf("%s",prompt);
     scanf(format, ptr);
-    printf(format,ptr);
     printf("\n");
 }
 
@@ -118,28 +92,41 @@ void ingresar_registro(hash_table_node* t_hash)
     get_info("Ingrese el Peso: "," %f", &new_record->peso);
     get_info("Ingrese el Sexo (H o M): "," %c",&new_record->sexo);
     while(new_record->sexo != 'M' && new_record->sexo !='H') get_info("Entrada Invalida! Ingrese el sexo de nuevo: "," %c",&new_record->sexo);
-    new_record->record_number = NUM_RECORDS+1;
+
 
    if(add_data(t_hash,new_record))
    {
     printf("Registro Guardado\n");
+	imprimirMascota(new_record);
    }else{
         printf("Ocurrio Un Problema al Guardar el Registro\n");
    }
+}
+
+void buscar_registro(hash_table_node* t_hash)
+{
+	char name[32];
+	int num_reg;
+	get_info("Nombre de la mascota: "," %s", name);
+
+	get_info("\nNúmero del Registro: "," %i",&num_reg);
+
+	imprimirMascota(get_data(t_hash,name,num_reg));
 }
 
 void menu()
 {
 	int option;
     hash_table_node *t_hash;
-
-    t_hash = new_HT();
+	printf("%p\n", t_hash);
+    t_hash = open_hash_table();
+	printf("%p\n", t_hash);
     if(t_hash == NULL)
     {
         perror("No se pudo crear la tabla hash en menu");
         exit(-1);
     }
-
+	generarEstructuras(t_hash,10e+7);
     mostrar_menu();
     get_info("Ingrese la opcion: ", " %i", &option);
 
@@ -149,7 +136,7 @@ void menu()
         {
             case 1:
                 printf("Aqui se Ingresa un Registro\n");
-                //generarEstructuras(1.0e+2);
+
                 ingresar_registro(t_hash);
                 break;
             case 2:
@@ -161,11 +148,7 @@ void menu()
                 break;
             case 4:
                 printf("Aqui se Busca un Registro\n");
-                char name[32];
-                int num_reg;
-                get_info("Nombre de la mascota: "," %s", name);
-                get_info("\nNúmero del Registro: "," %i",&num_reg);
-                imprimirMascota(get_data(t_hash,name,num_reg));
+                buscar_registro(t_hash);
                 break;
             default:
                 break;
@@ -174,6 +157,7 @@ void menu()
         mostrar_menu();
         get_info("Ingrese la opcion: ", " %i", &option);
     }
+	close_hash_table(t_hash);
     printf("Adios :'v\n");
     free(t_hash);
 }

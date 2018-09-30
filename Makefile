@@ -14,4 +14,4 @@ structures.o: structures.c lib/structures.h
 	gcc -c structures.c -o structures.o
 
 clean:
-	rm -f *.o mascota p1-dogProgram.sh
+	rm -f *.o mascota p1-dogProgram.sh dataDog.dat hash_table.bin
