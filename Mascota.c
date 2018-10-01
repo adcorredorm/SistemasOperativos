@@ -77,71 +77,22 @@ void reiniciar_hash(int hashlist[]){
 
 void insertar_registro(dogType *mascota){
 
-  FILE *file, *temp;
-  file = fopen("dataDogs.dat", "rb+");
+  FILE *file;
+  int ok;
+  file = fopen("dataDogs.dat", "ab+");
   if(file == NULL){
     printf("Error al abrir dataDogs.dat");
     exit(-1);
   }
-  temp = fopen("dataDogs.temp", "wb+");
-  if(file == NULL){
-    printf("Error al crear dataDogs.temp");
+
+  ok = fwrite(mascota, sizeof(dogType), 1, file);
+  if(ok == 0){
+    printf("Error al escribir en dataDogs.temp");
+    remove("dataDogs.temp");
     exit(-1);
-  }
-
-  int ok;
-  dogType *newPet;
-  newPet = malloc(sizeof(dogType));
-  if(mascota == NULL){
-    printf("Error al insertar el nuevo registro");
-    exit(-1);
-  }
-
-  int flag = 0;
-
-  while(fread(newPet, sizeof(dogType), 1, file) > 0){
-
-    if(strcmp(mascota->nombre, newPet->nombre) > 0){
-      //Inserta el nuevo registro al final de los que tengan el mismo nombre
-      ok = fwrite(mascota, sizeof(dogType), 1, temp);
-      if(ok == 0){
-        printf("Error al escribir en dataDogs.temp");
-        remove("dataDogs.temp");
-        exit(-1);
-      }
-      flag = 1;
-    }
-
-    //Se copia en un archivo temporal la primera parte de los registros (antes del que va a ser insertado)
-    ok = fwrite(newPet, sizeof(dogType), 1, temp);
-    if(ok == 0){
-      printf("Error al escribir en dataDogs.temp");
-      remove("dataDogs.temp");
-      exit(-1);
-    }
-
-    if(flag == 1) break;
-
-  }
-
-  //Se copian los datos restantes
-  while(fread(newPet, sizeof(dogType), 1, file) > 0){
-    ok = fwrite(newPet, sizeof(dogType), 1, temp);
-    if(ok == 0){
-      printf("Error al escribir en dataDogs.temp");
-      remove("dataDogs.temp");
-      exit(-1);
-    }
   }
 
 	fclose(file);
-	fclose(temp);
-  free(newPet);
-
-  //Se elimina el archivo original
-	remove("dataDogs.dat");
-  //Se renombra el temporal
-  rename("dataDogs.temp","dataDogs.dat");
 }
 
 dogType* crear_registro(){
@@ -179,18 +130,18 @@ dogType* crear_registro(){
 void ver_registro(){
 
   system("clear");
-	FILE *file;
+	FILE *file, *data;
 	int dato, numero_de_registros, eleccion;
-	file = fopen("dataDogs.dat","rb");
-  if(file == NULL){
+	data = fopen("dataDogs.dat","rb+");
+  if(data == NULL){
     printf("Error al abrir dataDogs.dat");
     exit(-1);
   }
 
   //Envía el puntero al final del archivo
-  fseek(file,0,SEEK_END);
+  fseek(data, 0, SEEK_END);
   //Calcula la cantidad de elementos del archivo
-	numero_de_registros = ftell(file)/sizeof(dogType);
+	numero_de_registros = ftell(data)/sizeof(dogType);
 	printf("El numero de registros es: %d\n", numero_de_registros);
 
   printf("Ingrese el registro que desea buscar\n");
@@ -202,12 +153,10 @@ void ver_registro(){
 		scanf("%i", &dato);
 	}
 
-
 	dogType *newPet = malloc(sizeof(dogType));
   //Acomoda el puntero justo al inicio de el registro deseado y lo guarda en una estructura
-	fseek(file, (dato - 1) * sizeof(dogType),SEEK_SET);
-  fread(newPet, sizeof(dogType), 1, file);
-	fclose(file);
+	fseek(data, (dato - 1) * sizeof(dogType), SEEK_SET);
+  fread(newPet, sizeof(dogType), 1, data);
 
   //Se prepara el archivo temporal para modificar el registro
   file = fopen("temp.txt","w+");
@@ -248,15 +197,10 @@ void ver_registro(){
 		fclose(file);
 
     //Se reinserta la informacion recuperada en el registro de datos
-    file = fopen("dataDogs.dat", "rb+");
-    if(file == NULL){
-      printf("Error al abrir temp.txt");
-      exit(-1);
-    }
-    fseek(file, (dato - 1) * sizeof(dogType),SEEK_SET);
-    fwrite(newPet, sizeof(dogType), 1, file);
-    fclose(file);
+    fseek(data, (dato - 1) * sizeof(dogType), SEEK_SET);
+    fwrite(newPet, sizeof(dogType), 1, data);
 	}
+  fclose(data);
   free(newPet);
 	remove("temp.txt");
 }
@@ -430,7 +374,7 @@ int main(){
       case 5:
 
   			printf("Fin de la aplicacion\n");
-        
+
   		break;
 
 			default:
