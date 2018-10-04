@@ -38,24 +38,25 @@ void generarEstructuras(int cantidad, char nombres[][32], char razas[][16], char
     srand48(time(NULL)); //Semilla
 
     for(i = 0; i < cantidad; i++){
-        strcpy(randmascota->nombre, nombres[(int)(drand48()*cantNombres)]);
-        strcpy(randmascota->tipo, tipos[(int)(drand48()*cantTipos)]);
-        randmascota->edad = (int)(drand48()*15);
-        strcpy(randmascota->raza, razas[(int)(drand48()*cantRazas)]);
-        randmascota->estatura = (int)(drand48()*180);
-        randmascota->peso = drand48()*80;
-        randmascota->sexo = (drand48() > 0.5)?'H':'M';
+      randmascota->id = i + 1;
+      strcpy(randmascota->nombre, nombres[(int)(drand48()*cantNombres)]);
+      strcpy(randmascota->tipo, tipos[(int)(drand48()*cantTipos)]);
+      randmascota->edad = (int)(drand48()*15);
+      strcpy(randmascota->raza, razas[(int)(drand48()*cantRazas)]);
+      randmascota->estatura = (int)(drand48()*180);
+      randmascota->peso = drand48()*80;
+      randmascota->sexo = (drand48() > 0.5)?'H':'M';
 
-        mascotas[i%50000] = *randmascota;
+      mascotas[i%50000] = *randmascota;
 
-        if(i%(size+1) == size || i == cantidad - 1){
-            if(i == cantidad - 1) size = (i % size) + 1;
-            ok = fwrite(mascotas, sizeof(dogType), size, file);
-            if(ok < size){
-                printf("fwrite error in %i", i);
-                exit(-1);
-            }
+      if(i%(size+1) == size || i == cantidad - 1){
+        if(i == cantidad - 1) size = (i % size) + 1;
+        ok = fwrite(mascotas, sizeof(dogType), size, file);
+        if(ok < size){
+          printf("fwrite error in %i", i);
+          exit(-1);
         }
+      }
     }
     free(randmascota);
 

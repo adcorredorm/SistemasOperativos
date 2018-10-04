@@ -8,6 +8,7 @@
 int hash_list[HASH_TABLE_SIZE];
 
 typedef struct{
+    int id;
     char nombre[32];
     char tipo[32];
     int edad;

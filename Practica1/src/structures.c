@@ -59,6 +59,14 @@ dogType* crear_registro()
         exit(-1);
     }
     system("clear");
+
+    FILE *file = fopen(DATA_PATH, "rb");
+    //Validar
+    fseek(file, -sizeof(dogType), SEEK_END);
+    fread(mascota, sizeof(dogType), 1, file);
+    fclose(file);
+    mascota->id = mascota->id+1;
+
     printf("Bienvenido el menú para registrar una nueva mascota.\nPorfavor ingrese los datos solicitados a continuación:\n\n");
     printf("Ingrese el nombre de la mascota\n");
     scanf(" %s", mascota->nombre);

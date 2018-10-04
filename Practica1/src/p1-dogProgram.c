@@ -125,59 +125,39 @@ void eliminar_registro()
 
 void mostrar_editor(int dato, FILE *data)
 {
-    dogType *newPet = malloc(sizeof(dogType));
-    int eleccion;
+    dogType *mascota = malloc(sizeof(dogType));
+    char ruta[32], comando[38] = "gedit ";
+
     //Acomoda el puntero justo al inicio de el registro deseado y lo guarda en una estructura
     fseek(data, (dato - 1) * sizeof(dogType), SEEK_SET);
-    fread(newPet, sizeof(dogType), 1, data);
+    fread(mascota, sizeof(dogType), 1, data);
+    fclose(data);
 
-    //Se prepara el archivo temporal para modificar el registro
-    FILE *file = fopen(TEMP_PATH,"w+");
+    //Comprueba la existencia d la historia clinica de la mascota
+    sprintf(ruta, "historias/%i.txt", mascota->id);
+    FILE *file = fopen(ruta, "r");
     if(file == NULL){
-        printf("Error al abrir %s\n",TEMP_PATH);
+      //En caso de que no exista el archivo, lo crea y lo inicia con los datos de la mascota
+      file = fopen(ruta, "w+");
+      if(file == NULL){
+        printf("Error al crear %s\n", ruta);
         exit(-1);
+      }
+
+      fprintf(file, "Nombre: %s\n", mascota->nombre);
+      fprintf(file, "Tipo:   %s\n", mascota->tipo);
+      fprintf(file, "Edad:   %i\n", mascota->edad);
+      fprintf(file, "Raza:   %s\n", mascota->raza);
+      fprintf(file, "Tamaño: %i\n", mascota->estatura);
+      fprintf(file, "Peso:   %f\n", mascota->peso);
+      fprintf(file, "Genero: %c\n", mascota->sexo);
     }
-    fprintf(file, "Nombre: %s\n", newPet->nombre);
-    fprintf(file, "Tipo:   %s\n", newPet->tipo);
-    fprintf(file, "Edad:   %i\n", newPet->edad);
-    fprintf(file, "Raza:   %s\n", newPet->raza);
-    fprintf(file, "Tamaño: %i\n", newPet->estatura);
-    fprintf(file, "Peso:   %f\n", newPet->peso);
-    fprintf(file, "Genero: %c\n", newPet->sexo);
+    free(mascota);
     fclose(file);
 
-    system("gedit dataDogs.temp");
-    printf("linea %i\n",156);
-    printf("¿Desea guardar los cambios realizados en el archivo?\n");
-    get_info("1 si, 0 no : "," %i", &eleccion);
-
-    if(eleccion == 1){
-        //string para almacenar basura
-        char trh[32];
-
-        //Se recupera la informacion del archivo temporal
-        file = fopen(TEMP_PATH,"r");
-        if(file == NULL){
-            printf("Error al abrir %s\n",TEMP_PATH);
-            exit(-1);
-        }
-        fscanf(file, "%s %s", trh, newPet->nombre);
-        fscanf(file, "%s %s", trh, newPet->tipo);
-        fscanf(file, "%s %i", trh, &newPet->edad);
-        fscanf(file, "%s %s", trh, newPet->raza);
-        fscanf(file, "%s %i", trh, &newPet->estatura);
-        fscanf(file, "%s %f", trh, &newPet->peso);
-        fscanf(file, "%s %c", trh, &newPet->sexo);
-        fclose(file);
-
-        //Se reinserta la informacion recuperada en el registro de datos
-        fseek(data, (dato - 1) * sizeof(dogType), SEEK_SET);
-        fwrite(newPet, sizeof(dogType), 1, data);
-        reiniciar_hash();
-    }
-    fclose(data);
-    free(newPet);
-    remove(TEMP_PATH);
+    //Abre el archivo usando gedit
+    strcat(comando, ruta);
+    system(comando);
 }
 
 void ver_registro()
@@ -185,7 +165,7 @@ void ver_registro()
 
     system("clear");
     FILE *data;
-    int dato, numero_de_registros;
+    int dato, cant_registos;
     data = fopen(DATA_PATH,"rb+");
     if(data == NULL){
         printf("Error al abrir %s\n",DATA_PATH);
@@ -195,12 +175,12 @@ void ver_registro()
     //Envía el puntero al final del archivo
     fseek(data, 0, SEEK_END);
     //Calcula la cantidad de elementos del archivo
-    numero_de_registros = ftell(data)/sizeof(dogType);
-    printf("El numero de registros es: %d\n", numero_de_registros);
+    cant_registos = ftell(data)/sizeof(dogType);
+    printf("El numero de registros es: %d\n", cant_registos);
 
-    get_info("Ingrese el registro que desea buscar: "," %i",&dato);
+    get_info("Ingrese el registro que desea buscar: "," %i", &dato);
 
-    while(dato > numero_de_registros || dato < 0){
+    while(dato > cant_registos || dato < 0){
         //Verifica que si exista el registro
         printf("Registro Incorrecto\n");
         get_info("Por favor ingrese el registro que desea buscar: "," %i", &dato);
@@ -227,6 +207,7 @@ void insertar_registro(dogType *mascota)
     }
 
     fclose(file);
+    free(mascota);
 }
 
 void mostrar_menu()
