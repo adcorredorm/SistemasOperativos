@@ -14,7 +14,6 @@ p1-dogProgram.o: src/p1-dogProgram.c lib/structures.h
 
 generator: generator.c
 	gcc generator.c -o generator.sh
-	mkdir -p historias
 
 clean:
 	rm -f *.o *.sh *.dat historias/*

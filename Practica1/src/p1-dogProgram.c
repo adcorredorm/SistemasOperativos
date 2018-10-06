@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../lib/structures.h"
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 dogType* crear_registro();
 void eliminar_registro();
@@ -66,7 +69,7 @@ void eliminar_registro()
     system("clear");
     FILE *file, *temp;
     int dato, numero_de_registros, eleccion;
-    file = fopen(DATA_PATH,"rb");
+    file = fopen(DATA_PATH,"rb+");
     if(file == NULL){
         printf("Error al abrir %s",DATA_PATH);
         exit(-1);
@@ -87,39 +90,40 @@ void eliminar_registro()
         scanf("%i", &dato);
     }
 
-    //Regresa el puntero file al inicio del archivo
-    rewind(file);
-    temp = fopen(TEMP_PATH, "wb+");
-    if(file == NULL){
-        printf("Error al crear %s\n",TEMP_PATH);
-        exit(-1);
-    }
-    int i = 1;
-    dogType *newPet = malloc(sizeof(dogType));
-    if(newPet == NULL){
-        printf("malloc error");
-        exit(-1);
-    }
-    while( fread(newPet, sizeof(dogType), 1, file) != 0 && dato != i){
-        //Se copia en un archivo temporal la primera parte de los registros (antes del que va a ser eliminado)
-        fwrite(newPet, sizeof(dogType), 1, temp);
-        i ++;
-    }
+    dogType *ultima = malloc(sizeof(dogType)), *eliminada = malloc(sizeof(dogType));
 
-    printf("La mascota que será eliminada es :\"%s\"\n", newPet->nombre);
+    //Se guarda el ultimo dato del archivo
+    fseek(file, -sizeof(dogType), SEEK_END);
+    fread(ultima, sizeof(dogType), 1, file);
 
-    //Se copian los datos restantes
-    while(fread(newPet, sizeof(dogType), 1, file) != 0)
-        fwrite(newPet, sizeof(dogType), 1, temp);
+    //Posicionamos el puntero justo antes del dato a eliminar
+    fseek(file, (dato - 1) * sizeof(dogType), SEEK_SET);
 
-    free(newPet);
+
+    fread(eliminada, sizeof(dogType), 1, file);
+    printf("La mascota que será eliminada es :\"%s\"\n", eliminada->nombre);
+
+    //Se elimina la historia clinica relacionada a la mascota
+    char ruta[32];
+    sprintf(ruta, "historias/%i.txt", eliminada->id);
+    remove(ruta);
+
+    //Se sobre-escribe el dato a eliminar
+    fseek(file, -sizeof(dogType), SEEK_CUR);
+    fwrite(ultima, sizeof(dogType), 1, file);
+
     fclose(file);
-    fclose(temp);
 
-    //Se elimina el archivo original
-    remove(DATA_PATH);
-    //Se renombra el temporal
-    rename(TEMP_PATH, DATA_PATH);
+    //Se abre y se trunca el archivo para borrar el ultimo dato (el cual ya se salvo)
+    int fd = open(DATA_PATH, O_WRONLY);
+    if(fd == -1){
+      perror("Open error ");
+    }
+    ftruncate(fd, (numero_de_registros - 1) * sizeof(dogType));
+    close(fd);
+
+    free(ultima);
+    free(eliminada);
 }
 
 
@@ -230,6 +234,7 @@ void get_info(const char* prompt, const char* format, void *ptr)
 void menu()
 {
     int opcion;
+    last_id = 1;
     reiniciar_hash();
     do {
         mostrar_menu();

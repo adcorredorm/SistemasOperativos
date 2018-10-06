@@ -25,6 +25,7 @@ void reiniciar_hash()
     while(fread(mascota, sizeof(dogType), 1, file) != 0){
         //Almacena en la tabla la posicion del primer registro al que corresponde un valor de hash determinado
         if(hash_list[hash_value(mascota->nombre)] == 0) hash_list[hash_value(mascota->nombre)] = i;
+        if(mascota->id > last_id) last_id= mascota->id;
         i ++;
     }
     free(mascota);
@@ -60,12 +61,7 @@ dogType* crear_registro()
     }
     system("clear");
 
-    FILE *file = fopen(DATA_PATH, "rb");
-    //Validar
-    fseek(file, -sizeof(dogType), SEEK_END);
-    fread(mascota, sizeof(dogType), 1, file);
-    fclose(file);
-    mascota->id = mascota->id+1;
+    mascota->id = last_id + 1;
 
     printf("Bienvenido el menú para registrar una nueva mascota.\nPorfavor ingrese los datos solicitados a continuación:\n\n");
     printf("Ingrese el nombre de la mascota\n");

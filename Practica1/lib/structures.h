@@ -5,7 +5,7 @@
 #define DATA_PATH "dataDogs.dat"
 #define TEMP_PATH "dataDogs.temp"
 
-int hash_list[HASH_TABLE_SIZE];
+int hash_list[HASH_TABLE_SIZE], last_id;
 
 typedef struct{
     int id;
