@@ -7,7 +7,6 @@
 #include <arpa/inet.h>
 
 #define PORT 3535
-#define BACKLOG 8
 #define LEN 32
 
 int main(int argc, char *argv[]) {
