@@ -16,4 +16,5 @@ generator: generator.c
 	gcc generator.c -o generator.sh
 
 clean:
-	rm -f *.o *.sh *.dat historias/*
+	rm -f *.o *.sh *.dat
+	rm -r historias

@@ -5,6 +5,8 @@
 #define DATA_PATH "dataDogs.dat"
 #define TEMP_PATH "dataDogs.temp"
 
+#define PORT 80
+
 int hash_list[HASH_TABLE_SIZE], last_id;
 
 typedef struct{
