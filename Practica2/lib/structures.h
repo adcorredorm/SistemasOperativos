@@ -1,13 +1,7 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
-#define HASH_TABLE_SIZE 1000000
-#define DATA_PATH "dataDogs.dat"
-#define TEMP_PATH "dataDogs.temp"
-
-#define PORT 80
-
-int hash_list[HASH_TABLE_SIZE], last_id;
+#define PORT 3535
 
 typedef struct{
     int id;
@@ -20,9 +14,6 @@ typedef struct{
     char sexo; // H/M
 } dogType;
 
-void reiniciar_hash();
-unsigned long hash_value(char *str);
-void lower_case(char *str);
 dogType* crear_registro();
 void imprimirMascota(void *p);
 

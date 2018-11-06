@@ -1,11 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../lib/structures.h"
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <arpa/inet.h>
+#include "../lib/structures.h"
 
 dogType* crear_registro();
 void eliminar_registro();
@@ -41,6 +38,7 @@ void buscar_registro(){
     int i;
     char nombre[32];
     get_info("Ingrese el nombre que desea buscar: ", " %s", nombre);
+    enviar(nombre, 32);
 
     recibir(&i, sizeof(int));
     if(i == 0){
@@ -50,9 +48,9 @@ void buscar_registro(){
 
     printf("\nLos registros que coinciden con el nombre %s son:\n");
     do{
-      printf("->%i", i);
+      printf("-> %i", i);
       recibir(&i, sizeof(int));
-    }while(i > 0);//TODO: hacer que cuando acaben los registros que coinciden regrese -1
+    }while(i > 0);
 }
 
 void eliminar_registro(){
@@ -69,7 +67,9 @@ void eliminar_registro(){
     }
     enviar(&dato, sizeof(int));
 
-    recibir(&ok, sizeof(int)); //TODO: enviar confirmacion de que fue eliminado
+    char nombre[32];
+    recibir(nombre, 32);
+    printf("La mascota eliminada fue \"%s\"\n", nombre);
 }
 
 void ver_registro(){
@@ -98,7 +98,7 @@ void ver_registro(){
 
   FILE *temp = fopen("temp.txt", "w+");
   i = 0;
-  recibir(&buffer, size);
+  recibir(buffer, size);
   while(i < size){
     i += fwrite(buffer + i, size - i, 1, temp);
   }
@@ -117,7 +117,7 @@ void ver_registro(){
   while(i < size){
     i += fread(buffer + i, size - i, 1, temp);
   }
-  enviar(&buffer, size);
+  enviar(buffer, size);
 
   free(buffer);
   fclose(temp);
@@ -127,9 +127,9 @@ void ver_registro(){
 void insertar_registro(dogType *mascota){
     enviar(mascota, sizeof(dogType));
 
-    int posicion;
-    recibir(&posicion, sizeof(int));
-    printf("El registro fue insertado en la posicion %i", posicion);
+    int ok;
+    recibir(&ok, sizeof(int));
+    printf("El registro fue insertado en %i", ok);
     free(mascota);
 }
 
@@ -149,44 +149,44 @@ void get_info(const char* prompt, const char* format, void *ptr){
 }
 
 void menu(){
-    int opcion;
-    last_id = 1;
-    reiniciar_hash();
-    do {
-        mostrar_menu();
-        get_info("Ingrese la opcion: "," %i", &opcion);
-        enviar(&opcion, sizeof(int));
+  int opcion;
+  do {
+      mostrar_menu();
+      get_info("Ingrese la opcion: "," %i", &opcion);
+      if(opcion > 0 && opcion <= 5) enviar(&opcion, sizeof(int));
 
-        switch (opcion) {
-            case 1:
+      switch (opcion) {
+          case 1:
             insertar_registro(crear_registro());
-            reiniciar_hash();
-            break;
-            case 2:
+          break;
+
+          case 2:
             ver_registro();
-            break;
-            case 3:
+          break;
+
+          case 3:
             eliminar_registro();
-            reiniciar_hash();
-            break;
-            case 4:
+          break;
+
+          case 4:
             buscar_registro();
-            break;
-            case 5:
+          break;
+
+          case 5:
             system("clear");
             printf("Fin de la Aplicación.\n");
-            break;
-            default:
+          break;
+
+          default:
             printf("Opción invalida\n");
-            break;
-        }
-        if(opcion!=5)
-        {
-            printf("Presione enter para volver al menu\n");
-            while(getchar() != '\n');
-        }
-        getchar();
-    } while(opcion != 5);
+          break;
+      }
+      if(opcion!=5){
+          printf("Presione enter para volver al menu\n");
+          while(getchar() != '\n');
+      }
+      getchar();
+  } while(opcion != 5);
 }
 
 void crear_socket(char *addr){

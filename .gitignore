@@ -3,3 +3,6 @@
 *.sh
 *.dat
 *.o
+client
+server
+generator
