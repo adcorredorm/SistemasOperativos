@@ -146,7 +146,7 @@ void enviar_historia(int socket_cliente, int dato, FILE *data){
 
   //Comprueba la existencia de la historia clinica de la mascota
   sprintf(ruta, "historias/%i.txt", mascota->id);
-  FILE *file = fopen(ruta, "a");
+  FILE *file = fopen(ruta, "r");
   if(file == NULL){
     //En caso de que no exista el archivo, lo crea y lo inicia con los datos de la mascota
     file = fopen(ruta, "w+");
@@ -164,16 +164,20 @@ void enviar_historia(int socket_cliente, int dato, FILE *data){
     fprintf(file, "Genero: %c\n", mascota->sexo);
   }
   free(mascota);
+  fclose(file);
+  fopen(ruta, "a");
 
-  size_t size = ftell(file);
-  enviar(socket_cliente, &size, sizeof(size_t));
+  int size = fseek(file, 0, SEEK_SET);
+  enviar(socket_cliente, &size, sizeof(int));
 
   char *buffer = malloc(size);
   rewind(file);
   int i = 0;
+  printf("empieza a leer %i\n", size);
   while(i < size){
     i += fread(buffer + i, size - i, 1, file);
   }
+  printf("termina de leer %i\n", size);
 
   enviar(socket_cliente, buffer, size);
   fclose(file);
@@ -209,14 +213,6 @@ void ver_registro(int socket_cliente){
 
   recibir(socket_cliente, &dato, sizeof(int));
 
-  size_t size;
-  recibir(socket_cliente, &size, sizeof(int));
-  buffer = malloc(size);
-  if(buffer == NULL){
-    perror("");
-    exit(-1);
-  }
-
   enviar_historia(socket_cliente, dato, data);
 }
 
@@ -225,12 +221,14 @@ void insertar_registro(int socket_cliente){
   recibir(socket_cliente, &mascota, sizeof(dogType));
 
   FILE *file;
-  int ok;
+  int ok, id;
   file = fopen(DATA_PATH, "ab+");
   if(file == NULL){
       printf("Error al abrir %s\n",DATA_PATH);
       exit(-1);
   }
+  id = last_id + 1;
+  mascota.id = id;
 
   ok = fwrite(&mascota, sizeof(dogType), 1, file);
   if(ok == 0){
@@ -238,8 +236,7 @@ void insertar_registro(int socket_cliente){
       exit(-1);
   }
 
-  ok = last_id + 1;
-  enviar(socket_cliente, &ok, sizeof(int));
+  enviar(socket_cliente, &id, sizeof(int));
 
   fclose(file);
 }

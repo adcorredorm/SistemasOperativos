@@ -6,7 +6,7 @@
 #include<strings.h>
 #include <arpa/inet.h>
 
-#define PORT 3535
+#define PORT 3536
 #define BACKLOG 8
 #define LEN 13
 #define BUFFLEN 32

@@ -46,9 +46,9 @@ void buscar_registro(){
         return;
     }
 
-    printf("\nLos registros que coinciden con el nombre %s son:\n");
+    printf("\nLos registros que coinciden con el nombre %s son:\n", nombre);
     do{
-      printf("-> %i", i);
+      printf("-> %i\n", i);
       recibir(&i, sizeof(int));
     }while(i > 0);
 }
@@ -88,7 +88,7 @@ void ver_registro(){
   }
   enviar(&dato, sizeof(int));
 
-  size_t size;
+  int size;
   recibir(&size, sizeof(int));
   buffer = malloc(size);
   if(buffer == NULL){
@@ -96,9 +96,9 @@ void ver_registro(){
     exit(-1);
   }
 
+  recibir(buffer, size);
   FILE *temp = fopen("temp.txt", "w+");
   i = 0;
-  recibir(buffer, size);
   while(i < size){
     i += fwrite(buffer + i, size - i, 1, temp);
   }
@@ -129,7 +129,7 @@ void insertar_registro(dogType *mascota){
 
     int ok;
     recibir(&ok, sizeof(int));
-    printf("El registro fue insertado en %i", ok);
+    printf("El registro fue insertado en %i\n", ok);
     free(mascota);
 }
 
