@@ -14,7 +14,7 @@ int socket_servidor;
 
 void enviar(int socket_cliente, void *pointer, size_t size){
   int ok = send(socket_cliente, pointer, size, 0);
-  if(ok == -1){
+  if(ok < 1){
     perror("send error");
     exit(-1);
   }
@@ -22,15 +22,13 @@ void enviar(int socket_cliente, void *pointer, size_t size){
 
 void recibir(int socket_cliente, void *pointer, size_t size){
   int ok = recv(socket_cliente, pointer, size, 0);
-  if(ok == -1){
+  if(ok < 1){
     perror("recv error");
     exit(-1);
   }
 }
 
 void buscar_registro(int socket_cliente){
-  system("clear");
-
   FILE *file;
   int aux = 0, i, ok;
   dogType *pet;
@@ -81,8 +79,6 @@ void buscar_registro(int socket_cliente){
 }
 
 void eliminar_registro(int socket_cliente){
-  system("clear");
-
   FILE *file, *temp;
   int dato, registros, eleccion;
   file = fopen(DATA_PATH, "rb+");
@@ -165,34 +161,33 @@ void enviar_historia(int socket_cliente, int dato, FILE *data){
   }
   free(mascota);
   fclose(file);
-  fopen(ruta, "a");
 
-  int size = fseek(file, 0, SEEK_SET);
-  enviar(socket_cliente, &size, sizeof(int));
+  file = fopen(ruta, "r+");
+  fseek(file, 0L, SEEK_END);
+  size_t size = ftell(file);
+  enviar(socket_cliente, &size, sizeof(size_t));
+
+  rewind(file);
 
   char *buffer = malloc(size);
-  rewind(file);
-  int i = 0;
-  printf("empieza a leer %i\n", size);
-  while(i < size){
-    i += fread(buffer + i, size - i, 1, file);
-  }
-  printf("termina de leer %i\n", size);
+  ssize_t i;
+  while((i = getline(&buffer, &size, file)) > 0) buffer += i;
+  buffer -= size;
 
   enviar(socket_cliente, buffer, size);
   fclose(file);
 
+
   recibir(socket_cliente, &size, sizeof(size_t));
   buffer = realloc(buffer, size);
-  recibir(socket_cliente, buffer, size);
-  i = 0;
-  file = fopen(ruta, "w+");
-  while(i < size){
-    i += fwrite(buffer + i, size - i, 1, file);
-  }
 
-  fclose(file);
+  recibir(socket_cliente, buffer, size);
+
+  file = fopen(ruta, "w+");
+  fprintf(file, "%s\n", buffer);
+
   free(buffer);
+  fclose(file);
 }
 
 void ver_registro(int socket_cliente){

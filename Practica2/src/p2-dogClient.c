@@ -18,7 +18,7 @@ int socket_cliente;
 
 void enviar(void *pointer, size_t size){
   int ok = send(socket_cliente, pointer, size, 0);
-  if(ok == -1){
+  if(ok < 1){
     perror("send error");
     exit(-1);
   }
@@ -26,7 +26,7 @@ void enviar(void *pointer, size_t size){
 
 void recibir(void *pointer, size_t size){
   int ok = recv(socket_cliente, pointer, size, 0);
-  if(ok == -1){
+  if(ok < 1){
     perror("recv error");
     exit(-1);
   }
@@ -76,7 +76,7 @@ void ver_registro(){
   system("clear");
 
   char *buffer;
-  int registros, dato, i;
+  int registros, dato;
 
   recibir(&registros, sizeof(int));
   printf("El numero de registros es: %d\n", registros);
@@ -88,40 +88,36 @@ void ver_registro(){
   }
   enviar(&dato, sizeof(int));
 
-  int size;
-  recibir(&size, sizeof(int));
+  size_t size;
+  recibir(&size, sizeof(size_t));
   buffer = malloc(size);
-  if(buffer == NULL){
-    perror("");
-    exit(-1);
-  }
 
   recibir(buffer, size);
-  FILE *temp = fopen("temp.txt", "w+");
-  i = 0;
-  while(i < size){
-    i += fwrite(buffer + i, size - i, 1, temp);
-  }
-  fclose(temp);
+
+  FILE *file = fopen("temp.txt", "w+");
+  fprintf(file, "%s\n", buffer);
+  fclose(file);
 
   system("gedit temp.txt");
 
-  temp = fopen("temp.txt", "a");
-  size = ftell(temp);
 
+  file = fopen("temp.txt", "r+");
+  fseek(file, 0L, SEEK_END);
+  size = ftell(file);
   enviar(&size, sizeof(size_t));
 
-  rewind(temp);
+  rewind(file);
+
   buffer = realloc(buffer, size);
-  i = 0;
-  while(i < size){
-    i += fread(buffer + i, size - i, 1, temp);
-  }
+  ssize_t i;
+  while((i = getline(&buffer, &size, file)) > 0) buffer += i;
+  buffer -= size;
+
   enviar(buffer, size);
 
-  free(buffer);
-  fclose(temp);
   remove("temp.txt");
+  free(buffer);
+  fclose(file);
 }
 
 void insertar_registro(dogType *mascota){
