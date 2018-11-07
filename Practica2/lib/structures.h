@@ -1,7 +1,7 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
-#define PORT 3535
+#define PORT 3536
 
 typedef struct{
     int id;

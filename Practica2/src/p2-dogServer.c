@@ -1,16 +1,39 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../lib/structures.h"
-#include "../lib/hash.h"
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <arpa/inet.h>
+#include <time.h>
+#include "../lib/structures.h"
+#include "../lib/hash.h"
 
 #define BACKLOG 32
+#define LOG_PATH "serverDogs.log"
 int socket_servidor;
+
+void escribir_log(int socket_cliente, int tipo_operacion, char *solicitud){
+  char registro[10], timef[100];
+  time_t t = time(NULL);
+  struct tm *tm = localtime(&t);
+  strftime(timef, 100, "%Y%m%d%H%M%S", tm);
+
+  switch (tipo_operacion){
+    case 1: strcpy(registro, "insercion\0"); break;
+    case 2: strcpy(registro, "lectura\0"  ); break;
+    case 3: strcpy(registro, "borrado\0"  ); break;
+    case 4: strcpy(registro, "busqueda\0" ); break;
+  }
+
+  struct sockaddr_in client;
+  int csize;
+  getpeername(socket_cliente, (struct sockaddr *)&client, &csize);
+
+  FILE *file = fopen(LOG_PATH, "a+");
+  fprintf(file, "%s %s %s %s\n", timef, inet_ntoa(client.sin_addr), registro, solicitud);
+  fclose(file);
+}
 
 void enviar(int socket_cliente, void *pointer, size_t size){
   int ok = send(socket_cliente, pointer, size, 0);
@@ -76,6 +99,8 @@ void buscar_registro(int socket_cliente){
   enviar(socket_cliente, &i, sizeof(int));
   free(pet);
   fclose(file);
+
+  escribir_log(socket_cliente, 4, nombre);
 }
 
 void eliminar_registro(int socket_cliente){
@@ -129,6 +154,10 @@ void eliminar_registro(int socket_cliente){
   enviar(socket_cliente, eliminada->nombre, 32);
   free(ultimo);
   free(eliminada);
+
+  char lg[10];
+  sprintf(lg, "%d", dato);
+  escribir_log(socket_cliente, 3, lg);
 }
 
 void enviar_historia(int socket_cliente, int dato, FILE *data){
@@ -209,6 +238,10 @@ void ver_registro(int socket_cliente){
   recibir(socket_cliente, &dato, sizeof(int));
 
   enviar_historia(socket_cliente, dato, data);
+
+  char lg[10];
+  sprintf(lg, "%d", dato);
+  escribir_log(socket_cliente, 2, lg);
 }
 
 void insertar_registro(int socket_cliente){
@@ -234,6 +267,7 @@ void insertar_registro(int socket_cliente){
   enviar(socket_cliente, &id, sizeof(int));
 
   fclose(file);
+  escribir_log(socket_cliente, 1, "");
 }
 
 void crear_socket(){
@@ -252,13 +286,11 @@ void crear_socket(){
   server.sin_port = htons(PORT);
   server.sin_addr.s_addr = INADDR_ANY;
 
-  printf("Iniciando el servidor en el puerto %i \n", PORT);
-
   int ok = bind(socket_servidor, (struct sockaddr*) &server, sizeof(struct sockaddr_in));
   if(ok == -1){
     perror("Error al iniciar el servidor\n");
     exit(-1);
-  }else printf("Inicio Exitoso\n");
+  }
 
   ok = listen(socket_servidor, BACKLOG);
   if(ok == -1){
@@ -296,7 +328,7 @@ void *atencion_cliente(int *socket_cliente){
       break;
 
       case 5:
-        printf("Conexion finalizada con %s\n", inet_ntoa(client.sin_addr));
+        //printf("Conexion finalizada con %s\n", inet_ntoa(client.sin_addr));
       break;
     }
   }while(opcion != 5);
@@ -312,7 +344,6 @@ int main(){
 
   struct sockaddr_in client;
 
-  printf("Presione Ctrl + C para terminar\n");
   do{
     clientes[i] = accept(socket_servidor, (struct sockaddr *) &client, (socklen_t *)&csize);
     if(clientes[i] == -1){
