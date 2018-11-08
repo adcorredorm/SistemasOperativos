@@ -1,0 +1,5 @@
+Uso:
+  comando 'make' para generar los archivos necesarios (incluyendo los 10 millones de registros aleatorios)
+  ./p2-dogServer para iniciar la aplicacion del lado del servidor
+  ./p2-dogClient <ip-servidor> para iniciar la aplicacion del lado del cliente
+  make clean para eliminar los archivos generados

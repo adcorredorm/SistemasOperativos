@@ -4,7 +4,7 @@
 #include <arpa/inet.h>
 #include "../lib/structures.h"
 
-dogType* crear_registro();
+
 void eliminar_registro();
 void mostrar_editor(int dato, FILE *data);
 void ver_registro();

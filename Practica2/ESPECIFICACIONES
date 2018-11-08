@@ -1,0 +1,26 @@
+Hecho por: adcorredorm - jedcastroag
+
+
+Los archivos fuente p2-dogServer.c y p2-dogCLient.c se encuantran en la carpeta src
+
+
+
+Todos los archivos '*.h' se encuentran en la carpeta 'lib'
+
+
+
+Hay cinco modulos en esté proyecto: structures, hash, generator, p2-dogServer y p2-dogClient: 
+
+-> structures, es el modulo donde se encuentra la definición de la estructura dogType y los metodos para manejarla.
+
+-> hash, es el modulo donde se encuentra la estructura hash, la cual alberga la primera posición (en el archivo) del registro que coincide con el valor hash (indice) de esa entrada.
+
+-> generator, es el modulo independiente, encargado de generar el archivo 'dogData.dat'. En donde hay 10 millones de estructuras (registros) de tipo 'dogType'.
+
+-> p2-dogServer, es el modulo encargado de proveer la información requerida a p2-dogClient (servidor) a través del paso de mensajes, y gestionar el archivo 'dogData.dat'. Este modulo depende de los anteriores modulos.
+
+-> p2-dogClient, es el modulo que el usuario usa, provee la interfaz (menú), para que el usuario se comunique con el servidor, a traves del paso de mensajes. Este modulo depende directamente de los tres primero modulos.
+
+
+
+Los archivos "*.txt" son importantes para generar el archivo "dogData.dat", ya que sostienen la información con la que se completan las estructuras 'dogType'

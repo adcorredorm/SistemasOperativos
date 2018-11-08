@@ -5,14 +5,6 @@
 #include <time.h>
 #include "lib/structures.h"
 
-void imprimirMascota(void *p){
-    dogType *pointer;
-    pointer = p;
-
-    printf("Nombre: %s\nTipo: %s\nEdad: %i años\nRaza: %s\nEstatura: %i cm\nPeso: %f kg\nSexo: %c\n\n",
-    pointer->nombre, pointer->tipo, pointer->edad, pointer->raza, pointer->estatura, pointer->peso, pointer->sexo);
-}
-
 int size = 32, cantNombres = 1670, cantRazas = 5, cantTipos = 6;
 
 void generarEstructuras(int cantidad, char nombres[][32], char razas[][16], char tipos[][32]){
