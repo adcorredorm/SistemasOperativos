@@ -11,7 +11,9 @@
 
 #define BACKLOG 32
 #define LOG_PATH "serverDogs.log"
+#define NO_ASIGNADO -2
 
+int NUM_CLIENTES;
 int socket_servidor;
 
 void escribir_log(int socket_cliente, int tipo_operacion, char *solicitud){
@@ -330,6 +332,8 @@ void *atencion_cliente(int *socket_cliente){
                 case 5:
                         //printf("Conexion finalizada con %s\n", inet_ntoa(client.sin_addr));
                         close(*socket_cliente);
+                        *socket_cliente = NO_ASIGNADO;
+                        NUM_CLIENTES--;
                         break;
                 }
         } while(opcion != 5);
@@ -341,20 +345,27 @@ int main(){
         last_id = 1;
         reiniciar_hash();
         pthread_t thread[BACKLOG];
-        int clientes[BACKLOG], csize, i = 0;
+        int clientesfd[BACKLOG], csize, i = 0;
 
         struct sockaddr_in client;
 
         do {
-                clientes[i] = accept(socket_servidor, (struct sockaddr *) &client, (socklen_t *)&csize);
-                if(clientes[i] == -1) {
+            for (size_t j = 0; j < BACKLOG; j++) {
+                if (clientesfd[j] <= NO_ASIGNADO) {
+                    i = j;
+                    break;
+                }
+            }
+
+                clientesfd[i] = accept(socket_servidor, (struct sockaddr *) &client, (socklen_t *)&csize);
+
+                if(clientesfd[i] == -1) {
                         perror("Error de conexion");
                         exit(-1);
                 }
-                pthread_create(&thread[i], NULL, (void *)atencion_cliente, (void *)&clientes[i]);
-
-                i++;
-        } while(i < BACKLOG);
+                pthread_create(&thread[i], NULL, (void *)atencion_cliente, (void *)&clientesfd[i]);
+                NUM_CLIENTES++;
+        } while(NUM_CLIENTES < BACKLOG);
         close(socket_servidor);
         return 0;
 }

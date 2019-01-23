@@ -28,7 +28,7 @@ void enviar(void *pointer, size_t size){
 void recibir(void *pointer, size_t size){
         int ok = recv(socket_cliente, pointer, size, 0);
         if(ok < 1) {
-                perror("recv error");
+                perror("recv error, conexión perdida");
                 exit(-1);
         }
 }
