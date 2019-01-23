@@ -346,12 +346,12 @@ int main(){
         reiniciar_hash();
         pthread_t thread[BACKLOG];
         int clientesfd[BACKLOG], csize, i = 0;
-
+        for (i = 0; i < BACKLOG; i++) clientesfd[i] = NO_ASIGNADO;
         struct sockaddr_in client;
 
         do {
             for (size_t j = 0; j < BACKLOG; j++) {
-                if (clientesfd[j] <= NO_ASIGNADO) {
+                if (clientesfd[j] == NO_ASIGNADO) {
                     i = j;
                     break;
                 }
