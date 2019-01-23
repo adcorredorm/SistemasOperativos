@@ -3,15 +3,15 @@
 
 #define PORT 3536
 
-typedef struct{
-    int id;
-    char nombre[32];
-    char tipo[32];
-    int edad;
-    char raza[16];
-    int estatura;
-    float peso;
-    char sexo; // H/M
+typedef struct {
+        int id;
+        char nombre[32];
+        char tipo[32];
+        int edad;
+        char raza[16];
+        int estatura;
+        float peso;
+        char sexo; // H/M
 } dogType;
 
 dogType* crear_registro();
