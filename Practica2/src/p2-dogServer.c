@@ -9,7 +9,7 @@
 #include "../lib/structures.h"
 #include "../lib/hash.h"
 
-#define BACKLOG 32
+#define BACKLOG 4
 #define LOG_PATH "serverDogs.log"
 #define NO_ASIGNADO -2
 
@@ -345,7 +345,7 @@ int main(){
         last_id = 1;
         reiniciar_hash();
         pthread_t thread[BACKLOG];
-        int clientesfd[BACKLOG], csize, i = 0;
+        int clientesfd[BACKLOG], csize, i = 0, ok;
         for (i = 0; i < BACKLOG; i++) clientesfd[i] = NO_ASIGNADO;
         struct sockaddr_in client;
 
@@ -366,6 +366,14 @@ int main(){
                 pthread_create(&thread[i], NULL, (void *)atencion_cliente, (void *)&clientesfd[i]);
                 NUM_CLIENTES++;
         } while(NUM_CLIENTES < BACKLOG);
+
+        for (i = 0; i < BACKLOG; i++) {
+            ok = pthread_join(thread[i],NULL);
+            if (ok != 0){
+                printf("Error al hacer join al hilo %i\n",i );
+                exit(-1);
+            }
+        }
         close(socket_servidor);
         return 0;
 }
