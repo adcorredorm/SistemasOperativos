@@ -3,6 +3,7 @@
 #include <string.h>
 #include "../lib/structures.h"
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -19,113 +20,55 @@ void menu();
 void buscar_registro()
 {
     system("clear");
-    FILE *file;
     int aux = 0, i, ok;
     dogType *pet;
 
-    char nombre[32],aux_n[32];
+    char nombre[32];
     get_info("Ingrese el nombre que desea buscar: ", " %s",nombre);
+
     //Se compruba que exista almenos un registro con ese nombre
-
-    i = hash_list[hash_value(nombre)];
-    if(i == 0){
+    if(!buscar(nombre)){
         printf("No existe  el registro solicitado\n");
-        return;
     }
-
-    file = fopen(DATA_PATH,"rb");
-    if(file == NULL)
-    {
-        printf("no se pudo abrir el archivo %s en buscar_registro\n",DATA_PATH);
-        exit(-1);
-    }
-    fseek(file, (i - 1) * sizeof(dogType), SEEK_SET);
-    pet = (dogType*) malloc(sizeof(dogType));
-    if(pet == NULL){
-        printf("malloc error");
-        exit(-1);
-    }
-    ok = fread(pet, sizeof(dogType), 1, file);
-    if (ok == 0) {
-        printf("error al leer en buscar_registro\n" );
-        exit(-1);
-    }
-    printf("\nLos registros que coinciden con el nombre %s son:\n-> %i\n", nombre, i++);
-    while(fread(pet, sizeof(dogType), 1, file) > 0){
-        //Busca los registros sucesivos que coincidan con el nombre
-        strcpy(aux_n,pet->nombre);
-        lower_case(aux_n);
-        if(strcmp(nombre, aux_n) == 0){
-            printf("-> %i\n", i);
-        }
-        i++;
-    }
-    free(pet);
-    fclose(file);
 }
 
 void eliminar_registro()
 {
     system("clear");
-    FILE *file, *temp;
-    int dato, numero_de_registros, eleccion;
-    file = fopen(DATA_PATH,"rb+");
-    if(file == NULL){
-        printf("Error al abrir %s",DATA_PATH);
+    int dato;
+    dogType* to_del;
+
+    printf("El numero de registros es: %d\n", NUM_DATA);
+    get_info("Ingrese el registro que desea eliminar\n", " %i", &dato);
+
+    while(dato > NUM_DATA || dato < 0){
+        //Verifica que si exista el registro
+        get_info("Registro Incorrecto\nPor favor ingrese el registro que desea eliminar\n", " %i", &dato);
+    }
+
+    if ((to_del = eliminar(dato)) == NULL) {
+        printf("%s\n", "eliminar-error en eliminar_registro");
         exit(-1);
     }
 
-    //Envía el puntero al final del archivo
-    fseek(file,0,SEEK_END);
-    //Calcula la cantidad de elementos del archivo
-    numero_de_registros = ftell(file)/sizeof(dogType);
-    printf("El numero de registros es: %d\n", numero_de_registros);
-
-    printf("Ingrese el registro que desea eliminar\n");
-    scanf(" %i", &dato);
-    while(dato > numero_de_registros || dato < 0){
-        //Verifica que si exista el registro
-        printf("Registro Incorrecto\n");
-        printf("Por favor ingrese el registro que desea eliminar\n");
-        scanf("%i", &dato);
-    }
-
-    dogType *ultima = malloc(sizeof(dogType)), *eliminada = malloc(sizeof(dogType));
-
-    //Se guarda el ultimo dato del archivo
-    fseek(file, -sizeof(dogType), SEEK_END);
-    fread(ultima, sizeof(dogType), 1, file);
-
-    //Posicionamos el puntero justo antes del dato a eliminar
-    fseek(file, (dato - 1) * sizeof(dogType), SEEK_SET);
-
-
-    fread(eliminada, sizeof(dogType), 1, file);
-    printf("La mascota que será eliminada es :\"%s\"\n", eliminada->nombre);
+    printf("La mascota que será eliminada es :\"%s\"\n", to_del->nombre);
 
     //Se elimina la historia clinica relacionada a la mascota
     char ruta[32];
-    sprintf(ruta, "historias/%i.txt", eliminada->id);
+    sprintf(ruta, "historias/%i.txt", to_del->id);
     remove(ruta);
 
-    //Se sobre-escribe el dato a eliminar
-    fseek(file, -sizeof(dogType), SEEK_CUR);
-    fwrite(ultima, sizeof(dogType), 1, file);
-
-    fclose(file);
+    free(to_del);
 
     //Se abre y se trunca el archivo para borrar el ultimo dato (el cual ya se salvo)
     int fd = open(DATA_PATH, O_WRONLY);
     if(fd == -1){
-      perror("Open error ");
+      perror("Open error\n");
+      exit(-1);
     }
-    ftruncate(fd, (numero_de_registros - 1) * sizeof(dogType));
+    ftruncate(fd, (NUM_DATA - 1) * sizeof(dogType));
     close(fd);
-
-    free(ultima);
-    free(eliminada);
 }
-
 
 void mostrar_editor(int dato, FILE *data)
 {
@@ -166,7 +109,6 @@ void mostrar_editor(int dato, FILE *data)
 
 void ver_registro()
 {
-
     system("clear");
     FILE *data;
     int dato, cant_registos;
@@ -193,25 +135,70 @@ void ver_registro()
     mostrar_editor(dato, data);
 }
 
-void insertar_registro(dogType *mascota)
+void insertar_registro(dogType *new_pet)
 {
 
     FILE *file;
-    int ok;
-    file = fopen(DATA_PATH, "ab+");
+    int ok, idx;
+    char aux[32];
+    dogType *last_pet;
+
+    file = fopen(DATA_PATH, "wb+");
     if(file == NULL){
         printf("Error al abrir %s\n",DATA_PATH);
         exit(-1);
     }
 
-    ok = fwrite(mascota, sizeof(dogType), 1, file);
+    strcpy(aux,new_pet->nombre);
+    idx = hash_value(aux);
+    new_pet->prev = hash_list[idx];
+    hash_list[idx] = (int) (ftell(file)/sizeof(new_pet)) + 1;
+
+    ok = fseek(file, (new_pet->prev -1)*sizeof(new_pet),SEEK_SET);
+    if (ok == -1) {
+        printf("%s\n", "feseek1-error en insertar_registro");
+        exit(-1);
+    }
+
+    if((last_pet = (dogType*) malloc(sizeof(new_pet))) == NULL){
+        printf("%s\n", "malloc-error en insertar_registro");
+        exit(-1);
+    }
+
+    if (!fread(last_pet, sizeof(last_pet),1,file)) {
+        printf("%s\n", "fread-error en insertar_registro");
+        exit(-1);
+    }
+
+    last_pet->next = hash_list[idx];
+
+    ok = fseek(file, -sizeof(new_pet),SEEK_CUR);
+    if (ok == -1) {
+        printf("%s\n", "feseek2-error en insertar_registro");
+        exit(-1);
+    }
+
+    ok = fwrite(last_pet, sizeof(dogType), 1, file);
     if(ok == 0){
-        printf("Error al escribir en %s\n",DATA_PATH);
+        printf("fwrite1-error en insertar_registro \n");
+        exit(-1);
+    }
+
+    ok = fseek(file, 0, SEEK_END);
+    if (ok == -1) {
+        printf("%s\n", "feseek3-error en insertar_registro");
+        exit(-1);
+    }
+
+    ok = fwrite(new_pet, sizeof(dogType), 1, file);
+    if(ok == 0){
+        printf("fwrite2-error en insertar_registro \n");
         exit(-1);
     }
 
     fclose(file);
-    free(mascota);
+    free(new_pet);
+    free(last_pet);
 }
 
 void mostrar_menu()
@@ -235,21 +222,19 @@ void menu()
 {
     int opcion;
     last_id = 1;
-    reiniciar_hash();
+    //iniciar_hash();
     do {
         mostrar_menu();
         get_info("Ingrese la opcion: "," %i", &opcion);
         switch (opcion) {
             case 1:
             insertar_registro(crear_registro());
-            reiniciar_hash();
             break;
             case 2:
             ver_registro();
             break;
             case 3:
             eliminar_registro();
-            reiniciar_hash();
             break;
             case 4:
             buscar_registro();
@@ -274,5 +259,6 @@ void menu()
 int main()
 {
     menu();
+    //printf("%zi\n",sizeof(dogType));
     return 0;
 }

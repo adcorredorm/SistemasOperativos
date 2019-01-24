@@ -1,9 +1,3 @@
 Hecho por: adcorredorm - jedcastroag
 
-Los archivos fuente p2-dogServer.c y p2-dogCLient.c se encuantran en la carpeta src
 
-Uso:
-  make para generar los archivos necesarios (incluyendo los 10 millones de registros aleatorios)
-  ./server para iniciar la aplicacion del lado del servidor
-  ./client <ip-servidor> para iniciar la aplicacion del lado del cliente
-  make clean para eliminar los archivos generados
