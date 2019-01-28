@@ -17,14 +17,14 @@ client.o: src/p2-dogClient.c lib/structures.h
 server: server.o structures.o hash.o generator
 	gcc structures.o hash.o p2-dogServer.o -o p2-dogServer -lpthread
 	mkdir -p historias
-	./generator #Esta linea es para generar los registros aleatorios
+
 
 server.o: src/p2-dogServer.c lib/structures.h lib/hash.h
 	gcc -c src/p2-dogServer.c -o p2-dogServer.o
 
 generator: generator.c
 	gcc generator.c -o generator
-
+	./generator #Esta linea es para generar los registros aleatorios
 clean:
 	rm -f *.o *.sh *.dat *.log p2-dogClient p2-dogServer generator
 	rm -rf historias
