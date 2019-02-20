@@ -5,6 +5,9 @@ all: client server
 structures.o: src/structures.c lib/structures.h
 	gcc -c src/structures.c -o structures.o
 
+blocker.o: src/blocker.c lib/blocker.h
+	gcc -c src/blocker.c -o blocker.o
+
 hash.o: src/hash.c lib/hash.h
 		gcc -c src/hash.c -o hash.o
 
@@ -14,8 +17,8 @@ client: client.o structures.o
 client.o: src/p3-dogClient.c lib/structures.h
 	gcc -c src/p3-dogClient.c -o p3-dogClient.o
 
-server: server.o structures.o hash.o
-	gcc structures.o hash.o p3-dogServer.o -o p3-dogServer -lpthread
+server: server.o structures.o hash.o blocker.o
+	gcc structures.o hash.o p3-dogServer.o blocker.o -o p3-dogServer -lpthread
 	mkdir -p historias
 
 

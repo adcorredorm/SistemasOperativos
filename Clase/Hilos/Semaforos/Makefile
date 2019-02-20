@@ -1,2 +1,2 @@
 hilo:
-	gcc sem.c -o sem -lpthread
+gcc sem.c -o sem -lpthread

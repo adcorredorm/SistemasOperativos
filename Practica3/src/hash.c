@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "../lib/structures.h"
 #include "../lib/hash.h"
+#include "../lib/blocker.h"
 
 void reiniciar_hash(){
         //reinicia el registro de la tabla para incluir registros
@@ -17,6 +18,8 @@ void reiniciar_hash(){
                 printf("malloc error");
                 exit(-1);
         }
+
+        lock(DATA_SOURCE);
         file = fopen("dataDogs.dat", "rb");
         if(file == NULL) {
                 printf("Error al abrir dataDogs.dat");
@@ -28,8 +31,9 @@ void reiniciar_hash(){
                 if(mascota->id > last_id) last_id= mascota->id;
                 i++;
         }
-        free(mascota);
         fclose(file);
+        unlock(DATA_SOURCE);
+        free(mascota);
 }
 
 unsigned long hash_value(char *str){

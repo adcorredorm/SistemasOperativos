@@ -10,61 +10,8 @@
 #include <semaphore.h>
 #include "../lib/structures.h"
 #include "../lib/hash.h"
-
-#define BACKLOG 4
-#define LOG_PATH "serverDogs.log"
-#define NO_ASIGNADO -2
-#define SEMAFORO 0
-#define TUBERIA 1
-#define MUTEX 2
-#define NOMBRE_SEM "semaforo"
-
-int NUM_CLIENTES;
-int socket_servidor;
-int opcion;
-
-sem_t *sem;
-
-int pipefd[2];
-char content[1] = "|";
-
-pthread_mutex_t mutex;
-
-
-void bloquear(){
-  switch (opcion) {
-    case SEMAFORO:
-      sem_wait(sem);
-    break;
-
-    case TUBERIA:
-      read(pipefd[0], content, sizeof(char));
-    break;
-
-    case MUTEX:
-      pthread_mutex_lock(&mutex);
-    break;
-  }
-  printf("bloqueado\n");
-  sleep(5);
-}
-
-void desbloquear(){
-  switch (opcion) {
-    case SEMAFORO:
-      sem_post(sem);
-    break;
-
-    case TUBERIA:
-      write(pipefd[1], content, sizeof(char));
-    break;
-
-    case MUTEX:
-      pthread_mutex_unlock(&mutex);
-    break;
-  }
-  printf("desbloquear\n");
-}
+#include "../lib/blocker.h"
+#include "../lib/server.h"
 
 void escribir_log(int socket_cliente, int tipo_operacion, char *solicitud){
         char registro[10], timef[100];
@@ -83,11 +30,11 @@ void escribir_log(int socket_cliente, int tipo_operacion, char *solicitud){
         int csize;
         getpeername(socket_cliente, (struct sockaddr *)&client, &csize);
 
-        //bloquear();
+        lock(LOG_SOURCE);
         FILE *file = fopen(LOG_PATH, "a+");
         fprintf(file, "%s %s %s %s\n", timef, inet_ntoa(client.sin_addr), registro, solicitud);
         fclose(file);
-        //desbloquear();
+        unlock(LOG_SOURCE);
 }
 
 void enviar(int socket_cliente, void *pointer, size_t size){
@@ -121,7 +68,7 @@ void buscar_registro(int socket_cliente){
                 return;
         }
 
-        bloquear();
+        lock(DATA_SOURCE);
 
         file = fopen(DATA_PATH,"rb");
         if(file == NULL) {
@@ -157,7 +104,7 @@ void buscar_registro(int socket_cliente){
         free(pet);
         fclose(file);
 
-        desbloquear();
+        unlock(DATA_SOURCE);
 
         escribir_log(socket_cliente, 4, nombre);
 }
@@ -166,7 +113,7 @@ void eliminar_registro(int socket_cliente){
         FILE *file, *temp;
         int dato, registros, eleccion;
 
-        bloquear();
+        lock(DATA_SOURCE);
 
         file = fopen(DATA_PATH, "rb+");
         if(file == NULL) {
@@ -206,6 +153,7 @@ void eliminar_registro(int socket_cliente){
         fclose(file);
 
         //Se abre y se trunca el archivo para borrar el ultimo dato (el cual ya se salvo)
+
         int fd = open(DATA_PATH, O_WRONLY);
         if(fd == -1) {
                 perror("Open error ");
@@ -213,7 +161,7 @@ void eliminar_registro(int socket_cliente){
         ftruncate(fd, (registros - 1) * sizeof(dogType));
         close(fd);
 
-        bloquear();
+        unlock(DATA_SOURCE);
 
         enviar(socket_cliente, eliminada->nombre, 32);
         free(ultimo);
@@ -233,7 +181,7 @@ void enviar_historia(int socket_cliente, int dato, FILE *data){
         fread(mascota, sizeof(dogType), 1, data);
         fclose(data);
 
-        desbloquear();
+        unlock(DATA_SOURCE);
 
         //Comprueba la existencia de la historia clinica de la mascota
         sprintf(ruta, "historias/%i.txt", mascota->id);
@@ -257,7 +205,7 @@ void enviar_historia(int socket_cliente, int dato, FILE *data){
         free(mascota);
         fclose(file);
 
-        bloquear();
+        lock(HIST_SOURCE);
 
         file = fopen(ruta, "r+");
         fseek(file, 0L, SEEK_END);
@@ -274,14 +222,14 @@ void enviar_historia(int socket_cliente, int dato, FILE *data){
         enviar(socket_cliente, buffer, size);
         fclose(file);
 
-        desbloquear();
+        unlock(HIST_SOURCE);
 
         recibir(socket_cliente, &size, sizeof(size_t));
         buffer = realloc(buffer, size);
 
         recibir(socket_cliente, buffer, size);
 
-        bloquear();
+        lock(HIST_SOURCE);
 
         file = fopen(ruta, "w+");
         fprintf(file, "%s\n", buffer);
@@ -289,7 +237,7 @@ void enviar_historia(int socket_cliente, int dato, FILE *data){
         free(buffer);
         fclose(file);
 
-        desbloquear();
+        unlock(HIST_SOURCE);
 }
 
 void ver_registro(int socket_cliente){
@@ -297,7 +245,7 @@ void ver_registro(int socket_cliente){
         int dato, cant_registos;
         char *buffer;
 
-        bloquear();
+        lock(DATA_SOURCE);
 
         data = fopen(DATA_PATH,"rb+");
         if(data == NULL) {
@@ -327,7 +275,7 @@ void insertar_registro(int socket_cliente){
         FILE *file;
         int ok, id;
 
-        bloquear();
+        lock(DATA_SOURCE);
 
         file = fopen(DATA_PATH, "ab+");
         if(file == NULL) {
@@ -347,7 +295,7 @@ void insertar_registro(int socket_cliente){
 
         fclose(file);
 
-        desbloquear();
+        unlock(DATA_SOURCE);
 
         escribir_log(socket_cliente, 1, "");
 }
@@ -419,23 +367,9 @@ void *atencion_cliente(int *socket_cliente){
 }
 
 int main(int argc, char *argv[]){
-    opcion = atoi(argv[1]);
+    BLOCK_OPTION = atoi(argv[1]);
 
-    switch (opcion) {
-      case SEMAFORO:
-        sem = sem_open(NOMBRE_SEM, O_CREAT, 0777, 1);
-      break;
-
-      case TUBERIA:
-        pipe(pipefd);
-        write(pipefd[1], content, sizeof(char));
-      break;
-
-      case MUTEX:
-        pthread_mutex_init(&mutex, NULL);
-      break;
-
-    }
+    init_blocker();
 
     crear_socket();
 
@@ -473,21 +407,6 @@ int main(int argc, char *argv[]){
     }
     close(socket_servidor);
 
-    switch (opcion) {
-      case SEMAFORO:
-        sem_close(sem);
-        sem_unlink(NOMBRE_SEM);
-      break;
-
-      case TUBERIA:
-        close(pipefd[0]);
-        close(pipefd[1]);
-      break;
-
-      case MUTEX:
-        pthread_mutex_destroy(&mutex);
-      break;
-
-    }
+    close_blocker();
     return 0;
 }
