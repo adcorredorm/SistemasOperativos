@@ -8,6 +8,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <semaphore.h>
+#include <signal.h>
 #include "../lib/structures.h"
 #include "../lib/hash.h"
 #include "../lib/blocker.h"
@@ -366,16 +367,34 @@ void *atencion_cliente(int *socket_cliente){
         } while(opcion != 5);
 }
 
-int main(int argc, char *argv[]){
-    BLOCK_OPTION = atoi(argv[1]);
+void finish_server(int signum) {
+    int i, ok;
+    for (i = 0; i < BACKLOG; i++) {
+        ok = pthread_join(thread[i],NULL);
+        if (ok != 0){
+            printf("Error al hacer join al hilo %i\n",i );
+            // exit(-1);
+        }
+    }
+    close(socket_servidor);
+    close_blocker();
+    printf("%s\n", "Servidor Cerrado");
+}
 
-    init_blocker();
+int main(int argc, char *argv[]){
 
     crear_socket();
 
+    struct sigaction finish_server_struct;
+    finish_server_struct.sa_handler = finish_server;
+    sigaction(SIGINT,&finish_server_struct, NULL);
+
+    BLOCK_OPTION = atoi(argv[1]);
+    init_blocker();
+
     last_id = 1;
     reiniciar_hash();
-    pthread_t thread[BACKLOG];
+
     int clientesfd[BACKLOG], csize, i, ok;
     for (i = 0; i < BACKLOG; i++) clientesfd[i] = NO_ASIGNADO;
     struct sockaddr_in client;

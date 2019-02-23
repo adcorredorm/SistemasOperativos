@@ -12,6 +12,9 @@
 #define HIST_SEM_NAME "hist_sem"
 
 int BLOCK_OPTION;
+sem_t *data_sem, *log_sem, *hist_sem;
+pthread_mutex_t data_mutex, log_mutex, hist_mutex;
+int data_pipefd[2], log_pipefd[2], hist_pipefd[2];
 
 void init_blocker();
 void lock(char* source);

@@ -3,6 +3,7 @@
 *.sh
 *.dat
 *.o
+*.log
 client
 server
 generator

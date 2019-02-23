@@ -1,5 +1,7 @@
 /* Librerias para los bloqueadores de las zonas críticas */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>           /* For O_* constants */
 #include <sys/stat.h>        /* For mode constants */
@@ -7,9 +9,6 @@
 #include <pthread.h>
 #include "../lib/blocker.h"
 
-sem_t *data_sem, *log_sem, *hist_sem;
-pthread_mutex_t data_mutex, log_mutex, hist_mutex;
-int data_pipefd[2], log_pipefd[2], hist_pipefd[2];
 char content[1] = "|";
 
 void init_pipe(int pipefd[]) {
@@ -17,8 +16,14 @@ void init_pipe(int pipefd[]) {
     write(pipefd[1], content, sizeof(char));
 }
 
-void init_sem(sem_t *sem, const char* name) {
+sem_t* init_sem(const char* name) {
+    sem_t *sem;
     sem = sem_open(name, O_CREAT, 0777, 1);
+    if (sem == NULL) {
+        perror("Error en init_sem");
+        exit(-1);
+    }
+    return sem;
 }
 
 void init_mutex(pthread_mutex_t* mutex) {
@@ -39,10 +44,10 @@ void close_mutex(pthread_mutex_t* mutex) {
     pthread_mutex_destroy(mutex);
 }
 
-void lock_sem(char* source) {
-    if (source == DATA_SOURCE) sem_wait(data_sem);
-    else if (source == LOG_SOURCE) sem_wait(log_sem);
-    else if (source == HIST_SOURCE) sem_wait(hist_sem);
+void lock_sem(const char* source) {
+    if (!strcmp(source, DATA_SOURCE)) sem_wait(data_sem);
+    else if (!strcmp(source, LOG_SOURCE)) sem_wait(log_sem);
+    else if (!strcmp(source, HIST_SOURCE)) sem_wait(hist_sem);
 }
 
 void lock_pipe(char* source) {
@@ -58,9 +63,9 @@ void lock_mutex(char* source) {
 }
 
 void unlock_sem(char* source) {
-    if (source == DATA_SOURCE) sem_post(data_sem);
-    else if (source == LOG_SOURCE) sem_post(log_sem);
-    else if (source == HIST_SOURCE) sem_post(hist_sem);
+    if (!strcmp(source, DATA_SOURCE)) sem_post(data_sem);
+    else if (!strcmp(source, LOG_SOURCE)) sem_post(log_sem);
+    else if (!strcmp(source, HIST_SOURCE)) sem_post(hist_sem);
 }
 
 void unlock_pipe(char* source) {
@@ -78,9 +83,9 @@ void unlock_mutex(char* source) {
 void init_blocker() {
     switch (BLOCK_OPTION) {
       case SEMAPHORE:
-        init_sem(data_sem,DATA_SEM_NAME);
-        init_sem(log_sem,LOG_SEM_NAME);
-        init_sem(hist_sem,HIST_SEM_NAME);
+        data_sem = init_sem(DATA_SEM_NAME);
+        log_sem = init_sem(LOG_SEM_NAME);
+        hist_sem = init_sem(HIST_SEM_NAME);
       break;
       case PIPE:
         init_pipe(data_pipefd);
