@@ -104,7 +104,6 @@ void buscar_registro(int socket_cliente){
         enviar(socket_cliente, &i, sizeof(int));
         free(pet);
         fclose(file);
-
         unlock(DATA_SOURCE);
 
         escribir_log(socket_cliente, 4, nombre);
@@ -179,60 +178,57 @@ void enviar_historia(int socket_cliente, dogType* mascota){
     //Comprueba la existencia de la historia clinica de la mascota
     sprintf(ruta, "historias/%i.txt", mascota->id);
     lock(HIST_SOURCE);
-    FILE *file = fopen(ruta, "r");
-    if(file == NULL) {
-        //En caso de que no exista el archivo, lo crea y lo inicia con los datos de la mascota
-        file = fopen(ruta, "w+");
+        FILE *file = fopen(ruta, "r");
         if(file == NULL) {
-                printf("Error al crear %s\n", ruta);
-                exit(-1);
+            //En caso de que no exista el archivo, lo crea y lo inicia con los datos de la mascota
+            file = fopen(ruta, "w+");
+            if(file == NULL) {
+                    printf("Error al crear %s\n", ruta);
+                    exit(-1);
+            }
+
+            fprintf(file, "Nombre: %s\n", mascota->nombre);
+            fprintf(file, "Tipo:   %s\n", mascota->tipo);
+            fprintf(file, "Edad:   %i\n", mascota->edad);
+            fprintf(file, "Raza:   %s\n", mascota->raza);
+            fprintf(file, "Tamaño: %i\n", mascota->estatura);
+            fprintf(file, "Peso:   %f\n", mascota->peso);
+            fprintf(file, "Genero: %c\n", mascota->sexo);
         }
 
-        fprintf(file, "Nombre: %s\n", mascota->nombre);
-        fprintf(file, "Tipo:   %s\n", mascota->tipo);
-        fprintf(file, "Edad:   %i\n", mascota->edad);
-        fprintf(file, "Raza:   %s\n", mascota->raza);
-        fprintf(file, "Tamaño: %i\n", mascota->estatura);
-        fprintf(file, "Peso:   %f\n", mascota->peso);
-        fprintf(file, "Genero: %c\n", mascota->sexo);
-    }
-
-    fclose(file);
+        fclose(file);
     unlock(HIST_SOURCE);
 
     lock(HIST_SOURCE);
-    file = fopen(ruta, "r+");
-    fseek(file, 0L, SEEK_END);
-    size_t size = ftell(file);
+        file = fopen(ruta, "r+");
+        fseek(file, 0L, SEEK_END);
+        size_t size = ftell(file);
     unlock(HIST_SOURCE);
+
     enviar(socket_cliente, &size, sizeof(size_t));
 
     lock(HIST_SOURCE);
-    rewind(file);
+        rewind(file);
 
-    char *buffer = malloc(size);
-    ssize_t i;
-    while((i = getline(&buffer, &size, file)) > 0) buffer += i;
-    buffer -= size;
+        char *buffer = malloc(size);
+        ssize_t i;
+        while((i = getline(&buffer, &size, file)) > 0) buffer += i;
+        buffer -= size;
 
-    fclose(file);
+        fclose(file);
     unlock(HIST_SOURCE);
 
     enviar(socket_cliente, buffer, size);
-
     recibir(socket_cliente, &size, sizeof(size_t));
     buffer = realloc(buffer, size);
-
     recibir(socket_cliente, buffer, size);
 
     lock(HIST_SOURCE);
-
-    file = fopen(ruta, "w+");
-    fprintf(file, "%s\n", buffer);
-    fclose(file);
-    printf("%s\n", "before unlock");
+        file = fopen(ruta, "w+");
+        fprintf(file, "%s\n", buffer);
+        fclose(file);
     unlock(HIST_SOURCE);
-    printf("%s %p\n", "Helloo", buffer);
+
     free(buffer);
 }
 

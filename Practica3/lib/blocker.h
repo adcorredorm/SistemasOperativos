@@ -10,6 +10,9 @@
 #define DATA_SEM_NAME "data_sem"
 #define LOG_SEM_NAME "log_sem"
 #define HIST_SEM_NAME "hist_sem"
+#define UNLOCK_PIPE_D "lock_d"
+#define UNLOCK_PIPE_L "lock_l"
+#define UNLOCK_PIPE_H "lock_h"
 
 int BLOCK_OPTION;
 pthread_mutex_t data_mutex, log_mutex, hist_mutex;

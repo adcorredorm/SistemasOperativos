@@ -10,11 +10,18 @@
 #include "../lib/blocker.h"
 
 sem_t *data_sem, *log_sem, *hist_sem;
-char content[1] = "|";
+char *pipe_buffer;
 
 void init_pipe(int pipefd[]) {
-    pipe(pipefd);
-    write(pipefd[1], content, sizeof(char));
+    int ok;
+    if (ok = pipe(pipefd)) {
+        perror("Error at init_pipe => pipe");
+        exit(-1);
+    }
+    if((ok = write(pipefd[1], UNLOCK_PIPE_D, sizeof(UNLOCK_PIPE_D))) == -1){
+        perror("Error at init_pipe => write");
+        exit(-1);
+    }
 }
 
 sem_t* init_sem(const char* name) {
@@ -49,21 +56,22 @@ void lock_sem(const char* source) {
     int ok;
     if (!strcmp(source, DATA_SOURCE)) {
         ok = sem_wait(data_sem);
-        if (!ok) {
+        // printf("%i\n", ok);
+        if (ok == -1) {
             perror("Error at lock_sem, source: DATA_SOURCE");
             exit(-1);
         }
     }
     else if (!strcmp(source, LOG_SOURCE)) {
         ok = sem_wait(log_sem);
-        if (!ok) {
+        if (ok == -1) {
             perror("Error at lock_sem, source: LOG_SOURCE");
             exit(-1);
         }
     }
     else if (!strcmp(source, HIST_SOURCE)) {
         ok = sem_wait(hist_sem);
-        if (!ok) {
+        if (ok == -1) {
             perror("Error at lock_sem, source: HIST_SOURCE");
             exit(-1);
         }
@@ -71,9 +79,28 @@ void lock_sem(const char* source) {
 }
 
 void lock_pipe(char* source) {
-    if (source == DATA_SOURCE) read(data_pipefd[0], content, sizeof(char));
-    else if (source == LOG_SOURCE) read(log_pipefd[0], content, sizeof(char));
-    else if (source == HIST_SOURCE) read(hist_pipefd[0], content, sizeof(char));
+    int ok;
+    if (!strcmp(source, DATA_SOURCE)) {
+        ok = read(data_pipefd[0], pipe_buffer, sizeof(UNLOCK_PIPE_D));
+        if (ok == -1) {
+            perror("Error at lock_pipe, source: DATA_SOURCE");
+            exit(-1);
+        }
+    }
+    else if (!strcmp(source, LOG_SOURCE)) {
+        ok = read(log_pipefd[0], pipe_buffer, sizeof(UNLOCK_PIPE_L));
+        if (ok == -1) {
+            perror("Error at lock_pipe, source: LOG_SOURCE");
+            exit(-1);
+        }
+    }
+    else if (!strcmp(source, HIST_SOURCE)) {
+        ok = read(hist_pipefd[0], pipe_buffer, sizeof(UNLOCK_PIPE_H));
+        if (ok == -1) {
+            perror("Error at lock_pipe, source: HIST_SOURCE");
+            exit(-1);
+        }
+    }
 }
 
 void lock_mutex(char* source) {
@@ -86,21 +113,21 @@ void unlock_sem(char* source) {
     int ok;
     if (!strcmp(source, DATA_SOURCE)) {
         ok = sem_post(data_sem);
-        if (!ok) {
+        if (ok == -1) {
             perror("Error at unlock_sem, source: DATA_SOURCE");
             exit(-1);
         }
     }
     else if (!strcmp(source, LOG_SOURCE)) {
         ok = sem_post(log_sem);
-        if (!ok) {
+        if (ok == -1) {
             perror("Error at unlock_sem, source: LOG_SOURCE");
             exit(-1);
         }
     }
     else if (!strcmp(source, HIST_SOURCE)) {
         ok = sem_post(hist_sem);
-        if (!ok) {
+        if (ok == -1) {
             perror("Error at unlock_sem, source: HIST_SOURCE");
             exit(-1);
         }
@@ -108,9 +135,28 @@ void unlock_sem(char* source) {
 }
 
 void unlock_pipe(char* source) {
-    if (source == DATA_SOURCE) write(data_pipefd[1], content, sizeof(char));
-    else if (source == LOG_SOURCE) write(log_pipefd[1], content, sizeof(char));
-    else if (source == HIST_SOURCE) write(hist_pipefd[1], content, sizeof(char));
+    int ok;
+    if (!strcmp(source, DATA_SOURCE)) {
+        ok = write(data_pipefd[1], UNLOCK_PIPE_D, sizeof(UNLOCK_PIPE_D));
+        if (ok == -1) {
+            perror("Error at unlock_pipe, source: DATA_SOURCE");
+            exit(-1);
+        }
+    }
+    else if (!strcmp(source, LOG_SOURCE)) {
+        ok = write(log_pipefd[1], UNLOCK_PIPE_L, sizeof(UNLOCK_PIPE_L));
+        if (ok == -1) {
+            perror("Error at unlock_pipe, source: LOG_SOURCE");
+            exit(-1);
+        }
+    }
+    else if (!strcmp(source, HIST_SOURCE)) {
+        ok = write(hist_pipefd[1], UNLOCK_PIPE_H, sizeof(UNLOCK_PIPE_H));
+        if (ok == -1) {
+            perror("Error at unlock_pipe, source: HIST_SOURCE");
+            exit(-1);
+        }
+    }
 }
 
 void unlock_mutex(char* source) {
@@ -127,12 +173,18 @@ void init_blocker() {
         hist_sem = init_sem(HIST_SEM_NAME);
       break;
       case PIPE:
+        pipe_buffer = malloc(sizeof(UNLOCK_PIPE_D));
+        if (pipe_buffer == NULL) {
+            perror("Error at init_blocker => pipe");
+            exit(-1);
+        }
         init_pipe(data_pipefd);
         init_pipe(log_pipefd);
         init_pipe(hist_pipefd);
       break;
 
       case MUTEX:
+        printf("%s\n", "Init Mutex");
         init_mutex(&data_mutex);
         init_mutex(&log_mutex);
         init_mutex(&hist_mutex);
@@ -188,6 +240,7 @@ void close_blocker() {
         close_pipe(data_pipefd);
         close_pipe(log_pipefd);
         close_pipe(hist_pipefd);
+        free(pipe_buffer);
       break;
 
       case MUTEX:
