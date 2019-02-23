@@ -46,9 +46,28 @@ void close_mutex(pthread_mutex_t* mutex) {
 }
 
 void lock_sem(const char* source) {
-    if (!strcmp(source, DATA_SOURCE)) sem_wait(data_sem);
-    else if (!strcmp(source, LOG_SOURCE)) sem_wait(log_sem);
-    else if (!strcmp(source, HIST_SOURCE)) sem_wait(hist_sem);
+    int ok;
+    if (!strcmp(source, DATA_SOURCE)) {
+        ok = sem_wait(data_sem);
+        if (!ok) {
+            perror("Error at lock_sem, source: DATA_SOURCE");
+            exit(-1);
+        }
+    }
+    else if (!strcmp(source, LOG_SOURCE)) {
+        ok = sem_wait(log_sem);
+        if (!ok) {
+            perror("Error at lock_sem, source: LOG_SOURCE");
+            exit(-1);
+        }
+    }
+    else if (!strcmp(source, HIST_SOURCE)) {
+        ok = sem_wait(hist_sem);
+        if (!ok) {
+            perror("Error at lock_sem, source: HIST_SOURCE");
+            exit(-1);
+        }
+    }
 }
 
 void lock_pipe(char* source) {
@@ -64,9 +83,28 @@ void lock_mutex(char* source) {
 }
 
 void unlock_sem(char* source) {
-    if (!strcmp(source, DATA_SOURCE)) sem_post(data_sem);
-    else if (!strcmp(source, LOG_SOURCE)) sem_post(log_sem);
-    else if (!strcmp(source, HIST_SOURCE)) sem_post(hist_sem);
+    int ok;
+    if (!strcmp(source, DATA_SOURCE)) {
+        ok = sem_post(data_sem);
+        if (!ok) {
+            perror("Error at unlock_sem, source: DATA_SOURCE");
+            exit(-1);
+        }
+    }
+    else if (!strcmp(source, LOG_SOURCE)) {
+        ok = sem_post(log_sem);
+        if (!ok) {
+            perror("Error at unlock_sem, source: LOG_SOURCE");
+            exit(-1);
+        }
+    }
+    else if (!strcmp(source, HIST_SOURCE)) {
+        ok = sem_post(hist_sem);
+        if (!ok) {
+            perror("Error at unlock_sem, source: HIST_SOURCE");
+            exit(-1);
+        }
+    }
 }
 
 void unlock_pipe(char* source) {

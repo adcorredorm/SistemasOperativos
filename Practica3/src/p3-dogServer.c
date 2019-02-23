@@ -173,100 +173,107 @@ void eliminar_registro(int socket_cliente){
         escribir_log(socket_cliente, 3, lg);
 }
 
-void enviar_historia(int socket_cliente, int dato, FILE *data){
-        dogType *mascota = malloc(sizeof(dogType));
-        char ruta[32];
+void enviar_historia(int socket_cliente, dogType* mascota){
+    char ruta[32];
 
-        //Acomoda el puntero justo al inicio de el registro deseado y lo guarda en una estructura
-        fseek(data, (dato - 1) * sizeof(dogType), SEEK_SET);
-        fread(mascota, sizeof(dogType), 1, data);
-        fclose(data);
-
-        unlock(DATA_SOURCE);
-
-        //Comprueba la existencia de la historia clinica de la mascota
-        sprintf(ruta, "historias/%i.txt", mascota->id);
-        FILE *file = fopen(ruta, "r");
-        if(file == NULL) {
-                //En caso de que no exista el archivo, lo crea y lo inicia con los datos de la mascota
-                file = fopen(ruta, "w+");
-                if(file == NULL) {
-                        printf("Error al crear %s\n", ruta);
-                        exit(-1);
-                }
-
-                fprintf(file, "Nombre: %s\n", mascota->nombre);
-                fprintf(file, "Tipo:   %s\n", mascota->tipo);
-                fprintf(file, "Edad:   %i\n", mascota->edad);
-                fprintf(file, "Raza:   %s\n", mascota->raza);
-                fprintf(file, "Tamaño: %i\n", mascota->estatura);
-                fprintf(file, "Peso:   %f\n", mascota->peso);
-                fprintf(file, "Genero: %c\n", mascota->sexo);
-        }
-        free(mascota);
-        fclose(file);
-
-        lock(HIST_SOURCE);
-
-        file = fopen(ruta, "r+");
-        fseek(file, 0L, SEEK_END);
-        size_t size = ftell(file);
-        enviar(socket_cliente, &size, sizeof(size_t));
-
-        rewind(file);
-
-        char *buffer = malloc(size);
-        ssize_t i;
-        while((i = getline(&buffer, &size, file)) > 0) buffer += i;
-        buffer -= size;
-
-        enviar(socket_cliente, buffer, size);
-        fclose(file);
-
-        unlock(HIST_SOURCE);
-
-        recibir(socket_cliente, &size, sizeof(size_t));
-        buffer = realloc(buffer, size);
-
-        recibir(socket_cliente, buffer, size);
-
-        lock(HIST_SOURCE);
-
+    //Comprueba la existencia de la historia clinica de la mascota
+    sprintf(ruta, "historias/%i.txt", mascota->id);
+    lock(HIST_SOURCE);
+    FILE *file = fopen(ruta, "r");
+    if(file == NULL) {
+        //En caso de que no exista el archivo, lo crea y lo inicia con los datos de la mascota
         file = fopen(ruta, "w+");
-        fprintf(file, "%s\n", buffer);
-
-        free(buffer);
-        fclose(file);
-
-        unlock(HIST_SOURCE);
-}
-
-void ver_registro(int socket_cliente){
-        FILE *data;
-        int dato, cant_registos;
-        char *buffer;
-
-        lock(DATA_SOURCE);
-
-        data = fopen(DATA_PATH,"rb+");
-        if(data == NULL) {
-                printf("Error al abrir %s\n",DATA_PATH);
+        if(file == NULL) {
+                printf("Error al crear %s\n", ruta);
                 exit(-1);
         }
 
-        //Envía el puntero al final del archivo
-        fseek(data, 0, SEEK_END);
-        //Calcula la cantidad de elementos del archivo
-        cant_registos = ftell(data)/sizeof(dogType);
-        enviar(socket_cliente, &cant_registos, sizeof(int));
+        fprintf(file, "Nombre: %s\n", mascota->nombre);
+        fprintf(file, "Tipo:   %s\n", mascota->tipo);
+        fprintf(file, "Edad:   %i\n", mascota->edad);
+        fprintf(file, "Raza:   %s\n", mascota->raza);
+        fprintf(file, "Tamaño: %i\n", mascota->estatura);
+        fprintf(file, "Peso:   %f\n", mascota->peso);
+        fprintf(file, "Genero: %c\n", mascota->sexo);
+    }
 
-        recibir(socket_cliente, &dato, sizeof(int));
+    fclose(file);
+    unlock(HIST_SOURCE);
 
-        enviar_historia(socket_cliente, dato, data);
+    lock(HIST_SOURCE);
+    file = fopen(ruta, "r+");
+    fseek(file, 0L, SEEK_END);
+    size_t size = ftell(file);
+    unlock(HIST_SOURCE);
+    enviar(socket_cliente, &size, sizeof(size_t));
 
-        char lg[10];
-        sprintf(lg, "%d", dato);
-        escribir_log(socket_cliente, 2, lg);
+    lock(HIST_SOURCE);
+    rewind(file);
+
+    char *buffer = malloc(size);
+    ssize_t i;
+    while((i = getline(&buffer, &size, file)) > 0) buffer += i;
+    buffer -= size;
+
+    fclose(file);
+    unlock(HIST_SOURCE);
+
+    enviar(socket_cliente, buffer, size);
+
+    recibir(socket_cliente, &size, sizeof(size_t));
+    buffer = realloc(buffer, size);
+
+    recibir(socket_cliente, buffer, size);
+
+    lock(HIST_SOURCE);
+
+    file = fopen(ruta, "w+");
+    fprintf(file, "%s\n", buffer);
+    fclose(file);
+    printf("%s\n", "before unlock");
+    unlock(HIST_SOURCE);
+    printf("%s %p\n", "Helloo", buffer);
+    free(buffer);
+}
+
+void ver_registro(int socket_cliente){
+    FILE *data;
+    int dato, cant_registos;
+    char *buffer;
+
+    lock(DATA_SOURCE);
+
+    data = fopen(DATA_PATH,"rb+");
+    if(data == NULL) {
+            printf("Error al abrir %s\n",DATA_PATH);
+            exit(-1);
+    }
+
+    //Envía el puntero al final del archivo
+    fseek(data, 0, SEEK_END);
+    //Calcula la cantidad de elementos del archivo
+    cant_registos = ftell(data)/sizeof(dogType);
+    unlock(DATA_SOURCE);
+
+    enviar(socket_cliente, &cant_registos, sizeof(int));
+
+    recibir(socket_cliente, &dato, sizeof(int));
+
+    dogType *mascota = malloc(sizeof(dogType));
+    //Acomoda el puntero justo al inicio de el registro deseado y lo guarda en una estructura
+    lock(DATA_SOURCE);
+    fseek(data, (dato - 1) * sizeof(dogType), SEEK_SET);
+    fread(mascota, sizeof(dogType), 1, data);
+    fclose(data);
+
+    unlock(DATA_SOURCE);
+
+    enviar_historia(socket_cliente, mascota);
+
+    free(mascota);
+    char lg[10];
+    sprintf(lg, "%d", dato);
+    escribir_log(socket_cliente, 2, lg);
 }
 
 void insertar_registro(int socket_cliente){
