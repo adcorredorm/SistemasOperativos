@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include "../lib/blocker.h"
 
+sem_t *data_sem, *log_sem, *hist_sem;
 char content[1] = "|";
 
 void init_pipe(int pipefd[]) {
@@ -116,8 +117,8 @@ void lock(char* source) {
         lock_mutex(source);
       break;
     }
-    printf("bloqueado\n");
-    sleep(5);
+    printf("bloqueado %s\n", source);
+    sleep(3);
 }
 
 void unlock(char* source) {
@@ -134,7 +135,7 @@ void unlock(char* source) {
         unlock_mutex(source);
       break;
     }
-    printf("desbloquear\n");
+    printf("desbloqueado %s\n", source);
 }
 
 void close_blocker() {

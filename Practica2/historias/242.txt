@@ -1,0 +1,10 @@
+Nombre: Biscocho
+Tipo:   perro
+Edad:   12
+Raza:   ruso
+Tamaño: 179
+Peso:   48.618057
+Genero: M
+
+
+Sc

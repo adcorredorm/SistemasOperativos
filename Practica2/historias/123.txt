@@ -1,0 +1,10 @@
+Nombre: Jacko
+Tipo:   tortuga
+Edad:   2
+Raza:   ruso
+Tamaño: 18
+Peso:   49.321537
+Genero: H
+
+EBH
+Sc

@@ -395,7 +395,7 @@ int main(int argc, char *argv[]){
     last_id = 1;
     reiniciar_hash();
 
-    int clientesfd[BACKLOG], csize, i, ok;
+    int csize, i, ok;
     for (i = 0; i < BACKLOG; i++) clientesfd[i] = NO_ASIGNADO;
     struct sockaddr_in client;
 

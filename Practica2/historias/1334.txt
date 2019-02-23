@@ -1,0 +1,9 @@
+Nombre: Nees
+Tipo:   tortuga
+Edad:   14
+Raza:   pequeño
+Tamaño: 77
+Peso:   61.604671
+Genero: M
+
+Sc

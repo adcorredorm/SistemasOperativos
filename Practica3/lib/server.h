@@ -9,5 +9,6 @@
 int NUM_CLIENTES;
 int socket_servidor;
 pthread_t thread[BACKLOG];
+int clientesfd[BACKLOG];
 
 #endif
