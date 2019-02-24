@@ -35,7 +35,12 @@ sem_t* init_sem(const char* name) {
 }
 
 void init_mutex(pthread_mutex_t* mutex) {
-    pthread_mutex_init(mutex, NULL);
+    int ok;
+    ok = pthread_mutex_init(mutex, NULL);
+    if (ok == -1) {
+        perror("Error at init_mutex");
+        exit(-1);
+    }
 }
 
 void close_sem(sem_t* sem, char* name) {
@@ -49,6 +54,7 @@ void close_pipe(int pipefd[]) {
 }
 
 void close_mutex(pthread_mutex_t* mutex) {
+    printf("%s\n", "Cerrando Mutex");
     pthread_mutex_destroy(mutex);
 }
 
@@ -56,7 +62,6 @@ void lock_sem(const char* source) {
     int ok;
     if (!strcmp(source, DATA_SOURCE)) {
         ok = sem_wait(data_sem);
-        // printf("%i\n", ok);
         if (ok == -1) {
             perror("Error at lock_sem, source: DATA_SOURCE");
             exit(-1);
@@ -104,9 +109,9 @@ void lock_pipe(char* source) {
 }
 
 void lock_mutex(char* source) {
-    if (source == DATA_SOURCE) pthread_mutex_lock(&data_mutex);
-    else if (source == LOG_SOURCE) pthread_mutex_lock(&log_mutex);
-    else if (source == HIST_SOURCE) pthread_mutex_lock(&hist_mutex);
+    if (!strcmp(source, DATA_SOURCE)) pthread_mutex_lock(&data_mutex);
+    else if (!strcmp(source, LOG_SOURCE)) pthread_mutex_lock(&log_mutex);
+    else if (!strcmp(source, HIST_SOURCE)) pthread_mutex_lock(&hist_mutex);
 }
 
 void unlock_sem(char* source) {
@@ -160,9 +165,9 @@ void unlock_pipe(char* source) {
 }
 
 void unlock_mutex(char* source) {
-    if (source == DATA_SOURCE) pthread_mutex_unlock(&data_mutex);
-    else if (source == LOG_SOURCE) pthread_mutex_unlock(&log_mutex);
-    else if (source == HIST_SOURCE) pthread_mutex_unlock(&log_mutex);
+    if (!strcmp(source, DATA_SOURCE)) pthread_mutex_unlock(&data_mutex);
+    else if (!strcmp(source, LOG_SOURCE)) pthread_mutex_unlock(&log_mutex);
+    else if (!strcmp(source, HIST_SOURCE)) pthread_mutex_unlock(&hist_mutex);
 }
 
 void init_blocker() {

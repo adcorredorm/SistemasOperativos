@@ -1,9 +1,0 @@
-Nombre: Dositeo
-Tipo:   perro
-Edad:   4
-Raza:   pequeño
-Tamaño: 179
-Peso:   24.344505
-Genero: M
-
-
