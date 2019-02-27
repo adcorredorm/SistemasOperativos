@@ -2,7 +2,7 @@
 #define SERVER_H
 
 
-#define BACKLOG 4
+#define BACKLOG 32
 #define LOG_PATH "serverDogs.log"
 #define NO_ASIGNADO -2
 

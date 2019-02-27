@@ -375,13 +375,13 @@ void finish_server(int signum) {
     for (i = 0; i < BACKLOG; i++) {
         ok = pthread_join(thread[i],NULL);
         if (ok != 0){
-            printf("Error al hacer join al hilo %i\n",i );
+            //printf("Error al hacer join al hilo %i\n",i );
             // exit(-1);
         }
     }
     close(socket_servidor);
     close_blocker();
-    printf("%s\n", "Servidor Cerrado");
+    printf("\n%s\n", "Servidor Cerrado");
 }
 
 int main(int argc, char *argv[]){
@@ -420,15 +420,7 @@ int main(int argc, char *argv[]){
             NUM_CLIENTES++;
     } while(NUM_CLIENTES < BACKLOG);
 
-    for (i = 0; i < BACKLOG; i++) {
-        ok = pthread_join(thread[i],NULL);
-        if (ok != 0){
-            printf("Error al hacer join al hilo %i\n",i );
-            exit(-1);
-        }
-    }
-    close(socket_servidor);
+    finish_server(0);
 
-    close_blocker();
     return 0;
 }

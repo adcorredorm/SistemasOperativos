@@ -54,7 +54,6 @@ void close_pipe(int pipefd[]) {
 }
 
 void close_mutex(pthread_mutex_t* mutex) {
-    printf("%s\n", "Cerrando Mutex");
     pthread_mutex_destroy(mutex);
 }
 
@@ -189,7 +188,6 @@ void init_blocker() {
       break;
 
       case MUTEX:
-        printf("%s\n", "Init Mutex");
         init_mutex(&data_mutex);
         init_mutex(&log_mutex);
         init_mutex(&hist_mutex);
@@ -213,7 +211,7 @@ void lock(char* source) {
       break;
     }
     printf("bloqueado %s\n", source);
-    sleep(3);
+    //sleep(3);
 }
 
 void unlock(char* source) {
